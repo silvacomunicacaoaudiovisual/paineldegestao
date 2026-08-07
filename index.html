@@ -269,10 +269,25 @@
   }
   .btn-primary:hover{background:#2850C4;}
 
+  .sidebar-overlay{display:none;}
+  .mobile-menu-btn{display:none;}
+
   @media (max-width:900px){
-    .sidebar{position:fixed;left:-230px;transition:left .15s;z-index:40;}
+    .sidebar{position:fixed;left:-230px;top:0;bottom:0;transition:left .2s;z-index:40;}
+    .sidebar.open{left:0;box-shadow:2px 0 24px rgba(0,0,0,0.5);}
     .stat-grid{grid-template-columns:repeat(2,1fr);}
     .grid-2{grid-template-columns:1fr;}
+
+    .sidebar-overlay.open{
+      display:block;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:39;
+    }
+
+    .mobile-menu-btn{
+      display:flex;align-items:center;justify-content:center;
+      width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
+      background:var(--card);color:var(--ink);cursor:pointer;margin-right:10px;
+      flex-shrink:0;
+    }
   }
 
 
@@ -304,7 +319,9 @@
 
 <div class="shell" style="display:none;">
 
-  <div class="sidebar">
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharSidebar()"></div>
+
+  <div class="sidebar" id="sidebar">
     <div class="sb-brand">
       <div class="sb-logo">
         <img src="logo.png" width="33" height="33" style="pointer-events:none;border-radius:6px;object-fit:cover;" alt="Logo">
@@ -359,6 +376,9 @@
 
   <div class="main">
     <div class="topbar">
+      <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="abrirSidebar()" title="Abrir menu" aria-label="Abrir menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
       <div class="top-user">
         <div class="top-user-info"></div>
       </div>
@@ -2359,10 +2379,21 @@ function baixarPDFPesquisa() {
     janela.document.close();
 }
 
+/* ---- Sidebar mobile ---- */
+function abrirSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+}
+function fecharSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
 /* ---- Navigation ---- */
 function goto(page){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.toggle('active', i.dataset.page===page));
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+page));
+  fecharSidebar();
   setTimeout(()=>{
     if(page==='dashboard' && mapDash) mapDash.invalidateSize();
     if(page==='mapa' && mapAtuacao) mapAtuacao.invalidateSize();
