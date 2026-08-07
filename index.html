@@ -1,0 +1,3038 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E4 PREMIUM — Sistema de Gestão</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root{
+    --sidebar:#060A14;
+    --sidebar-hover:#121A2C;
+    --sidebar-active:#132A4D;
+    --sidebar-active-border:#3B82F6;
+    --sidebar-text:#7C8AA5;
+    --sidebar-text-active:#FFFFFF;
+    --bg:#0A0F1C;
+    --card:#111828;
+    --card-2:#0D1424;
+    --border:#1F2A40;
+    --ink:#E7ECF5;
+    --muted:#8593AC;
+    --red:#EF4A5F;
+    --blue:#3B82F6;
+    --blue-tint:rgba(59,130,246,0.16);
+    --green:#22C77A;
+    --green-tint:rgba(34,199,122,0.16);
+    --amber:#F5A524;
+    --amber-tint:rgba(245,165,36,0.16);
+    --purple:#8B7CF0;
+  }
+  body.light-theme{
+    --bg:#F3F5FA;
+    --card:#FFFFFF;
+    --card-2:#F0F2F7;
+    --border:#DFE3EC;
+    --ink:#1B2436;
+    --muted:#66708A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);}
+  .shell{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{
+    width:230px;background:var(--sidebar);flex-shrink:0;
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+  }
+  .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 18px 18px;}
+  .sb-logo{
+    width: 28px;
+    height: 28px;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .sb-brand h1{font-size:16px;font-weight:700;color:#fff;margin:0;line-height:1.2;}
+  .sb-brand p{font-size:11px;color:var(--sidebar-text);margin:1px 0 0;}
+  .sb-nav{flex:1;padding:6px 12px;display:flex;flex-direction:column;gap:2px;}
+  .sb-item{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+    color:var(--sidebar-text);font-size:13.5px;font-weight:500;cursor:pointer;
+    border-left:3px solid transparent;transition:background .12s,color .12s;
+  }
+  .sb-item svg{flex-shrink:0;}
+  .sb-item:hover{background:var(--sidebar-hover);color:#D7DBE5;}
+  .sb-item.active{background:var(--sidebar-active);color:var(--sidebar-text-active);border-left-color:var(--sidebar-active-border);}
+  .sb-footer{padding:14px 16px 18px;border-top:1px solid rgba(255,255,255,0.08);}
+  .sb-user{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+  .sb-avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex-shrink:0;
+  }
+  .sb-user-name{font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;}
+  .sb-role{
+    display:inline-block;font-size:10px;font-weight:600;color:#fff;background:var(--red);
+    padding:2px 7px;border-radius:5px;margin-top:2px;
+  }
+  .sb-logout{
+    display:flex;align-items:center;gap:8px;color:var(--sidebar-text);font-size:13px;
+    cursor:pointer;padding:6px 2px;
+  }
+  .sb-logout:hover{color:#fff;}
+
+  /* Main */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .topbar{
+    display:flex;align-items:center;justify-content:flex-end;gap:16px;
+    padding:14px 28px;background:var(--card-2);border-bottom:1px solid var(--border);
+  }
+  .top-icon{
+    width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);cursor:pointer;border:1px solid transparent;
+  }
+  .top-icon:hover{background:var(--bg);}
+  .top-user{display:flex;align-items:center;gap:10px;}
+  .top-user-info{text-align:right;line-height:1.25;}
+  .top-user-name{font-size:12.5px;font-weight:600;}
+  .top-user-status{font-size:11px;color:var(--green);display:flex;align-items:center;gap:4px;justify-content:flex-end;}
+  .top-user-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);}
+  .top-avatar{
+    width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;
+  }
+
+  .content{padding:24px 28px 60px;max-width:1280px;width:100%;margin:0 auto;}
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .eyebrow{font-size:12.5px;color:var(--muted);margin-bottom:4px;}
+  .page-title{font-size:24px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;gap:10px;}
+  .page-sub{font-size:13.5px;color:var(--muted);margin:0 0 20px;max-width:640px;}
+  .page-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:20px;}
+
+  .pill-nav{display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{
+    display:flex;align-items:center;gap:6px;padding:9px 15px;border-radius:9px;
+    font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--ink);cursor:pointer;
+  }
+  .pill:hover{background:var(--sidebar-hover);}
+  .pill.filled{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .pill.filled:hover{background:#2F6FE0;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+  .stat-card{
+    background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+  }
+  .stat-card.fill-blue{background:#0077ff;border-color:#504f4f;}
+  .stat-card.fill-green{background:#ff7300;border-color:#504f4f;}
+  .stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .stat-label{font-size:12px;color:var(--muted);font-weight:500;}
+  .fill-blue .stat-label, .fill-green .stat-label{color:rgba(255,255,255,0.85);}
+  .stat-icon{
+    width:30px;height:30px;border-radius:8px;background:var(--card-2);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .fill-blue .stat-icon{background:rgba(255,255,255,0.18);color:#fff;}
+  .fill-green .stat-icon{background:rgba(255,255,255,0.18);color:#fff;}
+  .stat-value{font-size:28px;font-weight:700;line-height:1;}
+  .fill-blue .stat-value, .fill-green .stat-value{color:#fff;}
+  .stat-note{font-size:12px;color:var(--muted);margin-top:6px;}
+  .fill-blue .stat-note, .fill-green .stat-note{color:rgba(255,255,255,0.8);}
+  .stat-note a{color:inherit;text-decoration:underline;cursor:pointer;}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+  .card-title{font-size:14px;font-weight:600;margin:0 0 2px;}
+  .card-sub{font-size:12px;color:var(--muted);margin:0 0 14px;}
+
+  .grid-2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;}
+
+  #map, #mapAtuacao{height:380px;border-radius:10px;overflow:hidden;border:1px solid var(--border);z-index:0;}
+
+  /* Popup do mapa (balão de informações) — estilo dark */
+  .leaflet-popup-content-wrapper{
+    background:var(--card);
+    color:var(--ink);
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    padding:2px;
+  }
+  .leaflet-popup-content{margin:14px 16px;line-height:1.4;}
+  .leaflet-popup-tip{background:var(--card);border:1px solid var(--border);box-shadow:none;}
+  .leaflet-popup-close-button{
+    color:var(--muted) !important;
+    font-size:20px !important;
+    padding:8px 10px 0 0 !important;
+  }
+  .leaflet-popup-close-button:hover{color:var(--ink) !important;}
+  .popup-escola{font-weight:700;font-size:16px;color:var(--ink);margin-bottom:2px;}
+  .popup-cidade{font-size:12px;color:var(--muted);letter-spacing:.4px;margin-bottom:12px;}
+  .popup-stats{display:flex;background:var(--card-2);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;margin-bottom:14px;}
+  .popup-stat{flex:1;}
+  .popup-stat + .popup-stat{border-left:1px solid var(--border);}
+  .popup-stat-value{font-size:20px;font-weight:700;line-height:1.1;}
+  .popup-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px;}
+  .popup-section-title{
+    font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;
+    margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);
+  }
+  .popup-list{max-height:190px;overflow-y:auto;padding-right:4px;}
+  .popup-list::-webkit-scrollbar{width:6px;}
+  .popup-list::-webkit-scrollbar-track{background:transparent;}
+  .popup-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+  .popup-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--ink);
+  }
+  .popup-row:last-child{border-bottom:none;}
+  .popup-row-name{display:flex;align-items:center;gap:6px;min-width:0;}
+  .popup-row-name b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .popup-lider-badge{
+    font-size:10.5px;color:var(--amber);background:var(--amber-tint);padding:3px 7px;
+    border-radius:6px;font-weight:600;white-space:nowrap;flex-shrink:0;
+  }
+  .popup-empty{color:var(--muted);font-size:12px;padding:6px 0;}
+
+  /* Card "Últimos 7 dias" */
+  .d7-row{padding:10px 0;}
+  .d7-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .d7-row-label{font-size:13px;color:var(--muted);text-transform:capitalize;}
+  .d7-row-value{font-size:13px;font-weight:700;color:var(--ink);}
+  .d7-row-track{height:7px;border-radius:5px;background:var(--card-2);border:1px solid var(--border);overflow:hidden;}
+  .d7-row-fill{height:100%;border-radius:5px;background:var(--blue);transition:width .3s ease;}
+
+  .user-row{cursor:pointer;transition:background .15s ease;border-radius:8px;}
+  .user-row:hover{background:var(--card-2);}
+  .lider-cadastro-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+  .lider-cadastro-row:last-child{border-bottom:none;}
+  .lider-cadastro-nome{font-weight:600;color:var(--ink);}
+  .lider-cadastro-meta{font-size:11px;color:var(--muted);margin-top:1px;}
+
+  .users-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .search-input{
+    width:100%;max-width:520px;padding:10px 14px;border:1px solid var(--border);border-radius:9px;
+    font-size:13.5px;font-family:'Inter',sans-serif;background:var(--card-2);color:var(--ink);
+  }
+  .search-input::placeholder{color:var(--muted);}
+  .search-input:focus{outline:none;border-color:var(--blue);}
+  
+  .user-row{
+    display:flex;align-items:center;gap:12px;padding:12px 8px;border-bottom:1px solid var(--border);
+    position:relative;
+  }
+  .user-row:last-child{border-bottom:none;}
+  .user-corner{position:absolute;top:10px;right:8px;display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+  .user-avatar{
+    width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;flex-shrink:0;
+  }
+  .user-info{flex:1;min-width:0;padding-right:100px;}
+  .user-name-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .user-name{font-size:13.5px;font-weight:600;}
+  .badge-leader{
+    font-size:10.5px;background:var(--amber-tint);color:var(--amber);padding:2px 6px;border-radius:5px;font-weight:600;
+    display:flex;align-items:center;gap:3px;
+  }
+  .badge-count{
+    font-size:10.5px;background:var(--blue-tint);color:var(--blue);padding:2px 6px;border-radius:5px;font-weight:600;
+  }
+  .btn-tornar-lider{
+    font-size:10.5px;background:transparent;color:var(--blue);padding:2px 7px;border-radius:5px;font-weight:600;
+    border:1px solid var(--blue);cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap;
+  }
+  .btn-tornar-lider:hover{background:var(--blue-tint);}
+  .badge-leader{cursor:pointer;}
+  .badge-leader:hover{background:rgba(245,165,36,0.28);}
+  .user-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+  .user-row-actions{display:flex;align-items:center;gap:4px;margin-top:4px;}
+  .icon-btn-edit,.icon-btn-delete{
+    width:24px;height:24px;border-radius:6px;border:1px solid var(--border);background:var(--card-2);
+    color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;
+  }
+  .icon-btn-edit:hover{background:var(--blue-tint);color:var(--blue);border-color:var(--blue);}
+  .icon-btn-delete:hover{background:rgba(239,74,95,0.14);color:var(--red);border-color:var(--red);}
+  .user-actions{display:flex;gap:6px;}
+  .row-icon{
+    width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    color:var(--muted);cursor:pointer;border:1px solid var(--border);background:var(--card-2);
+  }
+  .row-icon:hover{background:var(--sidebar-hover);}
+  .row-icon.danger:hover{background:rgba(239,74,95,0.14);color:var(--red);border-color:rgba(239,74,95,0.3);}
+  .row-chevron{color:var(--muted);}
+
+  .btn-primary{
+    display:flex;align-items:center;gap:6px;background:var(--blue);color:#fff;border:none;
+    padding:10px 16px;border-radius:9px;font-size:13.5px;font-weight:600;cursor:pointer;
+  }
+  .btn-primary:hover{background:#2850C4;}
+
+  @media (max-width:900px){
+    .sidebar{position:fixed;left:-230px;transition:left .15s;z-index:40;}
+    .stat-grid{grid-template-columns:repeat(2,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+  }
+
+
+
+
+</style>
+</head>
+<body>
+<script>if (localStorage.getItem('e4-tema') === 'light') document.body.classList.add('light-theme');</script>
+
+<div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg);">
+  <form id="login-form" onsubmit="fazerLogin(event)" style="width:100%;max-width:340px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px 28px;">
+    <div style="text-align:center;margin-bottom:22px;">
+      <div style="font-weight:800;font-size:20px;color:var(--ink);">E4 PREMIUM</div>
+      <div style="font-size:12.5px;color:var(--muted);">Entrar no painel</div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Usuário</label>
+      <input type="text" id="login-usuario" required autocomplete="username" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card-2);color:var(--ink);font-family:'Inter',sans-serif;font-size:13.5px;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="display:block;font-size:12px;color:var(--muted);margin-bottom:5px;">Senha</label>
+      <input type="password" id="login-senha" required autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--card-2);color:var(--ink);font-family:'Inter',sans-serif;font-size:13.5px;">
+    </div>
+    <div id="login-erro" style="display:none;background:rgba(239,74,95,0.12);color:var(--red);font-size:12.5px;padding:8px 10px;border-radius:8px;margin-bottom:14px;"></div>
+    <button type="submit" id="login-btn" style="width:100%;background:var(--blue);color:#fff;border:none;padding:11px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:'Inter',sans-serif;">Entrar</button>
+  </form>
+</div>
+
+<div class="shell" style="display:none;">
+
+  <div class="sidebar">
+    <div class="sb-brand">
+      <div class="sb-logo">
+        <object data="logo.png" type="image/svg+xml" width="33" height="33" style="pointer-events: none;"></object>
+      </div>
+      <div>
+        <h1>E4 PREMIUM</h1>
+        <p>Sistema de gestão</p>
+      </div>
+    </div>
+    <div class="sb-nav" id="sbNav">
+      <div class="sb-item active" data-page="dashboard">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="sb-item" data-page="locais">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>
+        Locais
+      </div>
+      <div class="sb-item" data-page="cadastros">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Cadastros
+      </div>
+      <div class="sb-item" data-page="aptos">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg>
+        Análise Aptos
+      </div>
+      <div class="sb-item" data-page="mapa">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4z"/><path d="M8 2v16M16 6v16"/></svg>
+        Mapa de Atuação
+      </div>
+      <div class="sb-item" data-page="usuarios">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Usuários
+      </div>
+    </div>
+    <div class="sb-footer">
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar">?</div>
+        <div style="min-width:0;">
+          <div class="sb-user-name" id="sb-user-nome">—</div>
+        </div>
+      </div>
+      <button id="theme-toggle-btn" onclick="alternarTema()" title="Alternar tema claro/escuro" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--sidebar-hover);border:1px solid rgba(255,255,255,0.1);color:var(--sidebar-text);padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:8px;">
+        <span id="theme-toggle-icon">🌙</span>
+        <span id="theme-toggle-label">Modo escuro</span>
+      </button>
+      <button onclick="fazerLogout()" title="Sair do painel" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--sidebar-text);padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;">
+        <span>🚪</span> Sair
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="top-user">
+        <div class="top-user-info"></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-head-row">
+          <div>
+            <div class="eyebrow" id="dateNow"></div>
+            <h2 class="page-title">Painel E4 Premium</h2>
+            <p class="page-sub">Visão geral da operação e indicadores</p>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card" style="background-color: #05910c;">
+           <div class="stat-top">
+            <span class="stat-label" style="color: hsl(0, 0%, 99%);">Cadastrados</span></div>
+            <div class="stat-value" id="total-geral">0</div>
+          </div>
+
+          <div class="stat-card fill-blue" style="cursor: pointer;" onclick="abrirEdicaoMeta()">
+            <div class="stat-top">
+                <span class="stat-label">Meta</span>
+            </div>
+            <div class="stat-value" id="meta-valor-display" style="font-size: 2rem; font-weight: bold; margin: 8px 0;">
+                0
+            </div>
+            <div class="stat-note" id="meta-texto-acao" style="text-decoration: underline; font-size: 0.85rem;">
+                Definir meta
+            </div>
+            <div id="meta-box-edicao" style="display: none; margin-top: 10px;" onclick="event.stopPropagation()">
+                <span style="font-size: 0.85rem; opacity: 0.9;">Meta da sua rede</span>
+                <input type="number" id="valor-meta" value="2500" style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; font-size: 1rem; border-radius: 6px; padding: 6px 10px; margin: 6px 0;" placeholder="Ex: 15000">
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button onclick="salvarMeta()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                        ✓ Salvar
+                    </button>
+                    <button onclick="fecharEdicaoMeta(event)" style="background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); padding: 6px 8px; border-radius: 4px; cursor: pointer;">
+                        ✕
+                    </button>
+                </div>
+            </div>
+          </div>
+
+          <div class="stat-card fill-green">
+            <div class="stat-top"><span class="stat-label">Faltando</span></div>
+            <div class="stat-value" id="total-geral-meta">0</div>
+          </div>
+          
+          <div class="stat-card" style="background-color: #7f1d1d; border-color: #504f4f; cursor:pointer;" onclick="abrirModalPendentes()">
+            <div class="stat-top"><span class="stat-label" style="color: #ffffff;">Dados Incompletos</span></div>
+            <div class="stat-value" id="total-pendentes" style="color: #ffffff;">0</div>
+            <div class="stat-note" id="texto-pendentes" style="color: #ecc5c5;">Clique para ver a lista</div>
+          </div>
+        </div>
+
+        <div id="map" style="width: 100%; height: 500px; border-radius: 12px; margin-top: 20px;"></div>
+      </div>
+
+      <!-- LOCAIS -->
+      <div class="page" id="page-locais">
+        <h2 class="page-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V8l8-5 8 5v13"/></svg>
+          Inteligência por local
+        </h2>
+        <p class="page-sub">Análise completa da base por local, quem cadastrou e evolução diária.</p>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+    <div class="stat-top">
+        <span class="stat-label">Escolas cadastradas</span>
+    </div>
+    <!-- Adicionamos um ID aqui para o JavaScript encontrar o elemento -->
+    <div class="stat-value" id="total-escolas">14</div>
+    <div class="stat-note">Escolas na base</div>
+</div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Cadastros mapeados</span></div><div class="stat-value" id="stat-cadastros-mapeados">0</div><div class="stat-note">na base atual</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Taxa de ativos</span></div><div class="stat-value">100%</div><div class="stat-note">Sincronizado</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Líderes ativos</span></div><div class="stat-value" id="total-lideres">0</div><div class="stat-note">Já fizeram cadastros</div></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+          <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-md" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+              <h3 class="font-bold mb-4 text-slate-300" style="font-size: 14px; margin-bottom: 16px;">Soma de QUANTIDADE por LIDER</h3>
+              <div id="bar-chart-wrapper" style="position: relative; max-height: 560px; overflow-y: auto;">
+                  <canvas id="barChart"></canvas>
+              </div>
+          </div>
+          
+          <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-md" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
+              <h3 class="font-bold mb-2 text-slate-300" style="font-size: 14px; margin-bottom: 16px;">Soma de QUANTIDADE por ESCOLA</h3>
+              <div style="height: 300px; min-height: 300px; position: relative;">
+                  <canvas id="doughnutChart"></canvas>
+              </div>
+              <div id="legenda-personalizada" style="display: flex; flex-wrap: wrap; justify-content: center; align-content: flex-start; margin-top: 15px;"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 14px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+              <h3 class="card-title" style="margin:0;">Últimos 7 dias</h3>
+            </div>
+            <p class="card-sub" id="ultimos7dias-sub">Carregando cadastros da semana...</p>
+            <div id="ultimos7dias-lista"></div>
+        </div>
+      </div>
+
+      <!-- CADASTROS -->
+      <div class="page" id="page-cadastros">
+        <div class="page-head-row">
+          <div>
+            <h2 class="page-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Gestão de Cadastros por Municípios
+            </h2>
+            <p class="page-sub">Navegue por bairros, escolas e gerencie os registros do Supabase em tempo real.</p>
+          </div>
+        </div>
+
+        <!-- Adicione este bloco logo acima da barra de pesquisa -->
+<div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px;" id="abas-municipios">
+  <button onclick="filtrarMunicipio('Amapá')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Amapá</button>
+  <button onclick="filtrarMunicipio('Calçoene')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Calçoene</button>
+  <button onclick="filtrarMunicipio('Cutias')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Cutias</button>
+  <button onclick="filtrarMunicipio('Ferreira Gomes')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Ferreira Gomes</button>
+  <button onclick="filtrarMunicipio('Itaubal')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Itaubal</button>
+  <button onclick="filtrarMunicipio('Laranjal do Jari')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Laranjal do Jari</button>
+  <button onclick="filtrarMunicipio('Macapá')" class="pill active-municipio" style="background: var(--blue); color: #fff; border: 1px solid var(--blue); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Macapá</button>
+  <button onclick="filtrarMunicipio('Mazagão')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Mazagão</button>
+  <button onclick="filtrarMunicipio('Oiapoque')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Oiapoque</button>
+  <button onclick="filtrarMunicipio('Pedra Branca do Amapari')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Pedra Branca do Amapari</button>
+  <button onclick="filtrarMunicipio('Porto Grande')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Porto Grande</button>
+  <button onclick="filtrarMunicipio('Pracuúba')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Pracuúba</button>
+  <button onclick="filtrarMunicipio('Santana')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Santana</button>
+  <button onclick="filtrarMunicipio('Serra do Navio')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Serra do Navio</button>
+  <button onclick="filtrarMunicipio('Tartarugalzinho')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Tartarugalzinho</button>
+  <button onclick="filtrarMunicipio('Vitória do Jari')" class="pill" style="background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center; min-height: 38px; box-sizing: border-box;">Vitória do Jari</button>
+</div>
+
+        <div class="card" style="margin-bottom: 20px;">
+          <label style="font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px;">Selecione o Bairro:</label>
+          <div id="abas-bairros" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;"></div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <h3 id="bairro-titulo" class="card-title" style="font-size: 18px; color: var(--blue);">Bairro</h3>
+                <span id="qtd-escolas" style="font-size: 11px; background: var(--card-2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 6px; color: var(--muted);">0 escolas</span>
+              </div>
+              <button onclick="exportarBairroPDF()" class="btn-primary" style="background: var(--green);">
+                Baixar PDF do Bairro
+              </button>
+            </div>
+            <div id="lista-escolas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;"></div>
+          </div>
+
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <h3 class="card-title">Pessoas Cadastradas na Escola Selecionada</h3>
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <input id="inputPesquisa" placeholder="Digite o líder" class="search-input" style="padding: 6px 10px; font-size: 12px; max-width: 180px;">
+                <button onclick="abrirModalWhatsApp()" class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: #128C7E;">💬 WhatsApp em Massa</button>
+                <button onclick="baixarPDFPesquisa()" class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: #047857;">📥 Baixar PDF PESQUISA</button>
+              </div>
+            </div>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; text-align: left; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                  <tr style="color: var(--muted); border-bottom: 1px solid var(--border);">
+                    <th style="padding: 10px 8px;">Líder</th>
+                    <th style="padding: 10px 8px;">Nome</th>
+                    <th style="padding: 10px 8px;">Nome da Mãe</th>
+                    <th style="padding: 10px 8px;">Data Nasc.</th> 
+                    <th style="padding: 10px 8px;">Telefone</th>
+                    <th style="padding: 10px 8px;">Escola</th>
+                    <th style="padding: 10px 8px; text-align: center;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="tabela-cadastrados"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- APTOS -->
+      <div class="page" id="page-aptos">
+        <h2 class="page-title">Análise de aptos</h2>
+        <p class="page-sub">Eleitorado apto x cadastros x votação — priorização de campanha</p>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Total aptos</span></div><div class="stat-value">312.480</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Cadastros</span></div><div class="stat-value" id="stat-cadastros-aptos">41</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Penetração geral</span></div><div class="stat-value">0.0%</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Bairros</span></div><div class="stat-value" id="total-bairros">0</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card"><p class="card-title">Cadastros por bairro (%)</p><canvas id="chartAptos" height="280"></canvas></div>
+          <div class="card"><p class="card-title">Distribuição por zona</p><canvas id="chartRegiao" height="210"></canvas></div>
+        </div>
+      </div>
+
+      <!-- MAPA -->
+      <div class="page" id="page-mapa">
+        <h2 class="page-title">Mapa de atuação</h2>
+        <p class="page-sub">Distribuição geográfica da base em tempo real</p>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Total de registros</span></div><div class="stat-value" id="stat-mapa-total">0</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Ativos</span></div><div class="stat-value" id="stat-mapa-ativos">0</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Inativos</span></div><div class="stat-value">0</div></div>
+          <div class="stat-card"><div class="stat-top"><span class="stat-label">Meta atingida</span></div><div class="stat-value">0%</div></div>
+        </div>
+        <div id="mapAtuacao"></div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div class="page" id="page-usuarios">
+        <div class="users-toolbar">
+          <div>
+            <h2 class="page-title" style="margin-bottom:2px;">Usuários</h2>
+            <p class="page-sub" style="margin:0;" id="userCount">16 cadastros</p>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <input id="userSearch" placeholder="Buscar líder..." class="search-input" style="max-width:260px;">
+            <button onclick="abrirModalCadastrarLider()" class="btn-primary" style="padding: 8px 14px; font-size: 13px; white-space:nowrap;">+ Cadastrar Líder</button>
+          </div>
+        </div>
+        <div class="card" style="padding:8px 12px;margin-top:14px;"><div id="userList"></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO -->
+<div id="modal-edicao" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; padding:16px; z-index:50;">
+  <div class="card" style="width:100%; max-width:420px; background:var(--card); border:1px solid var(--border);">
+    <h2 class="card-title" style="font-size:18px; margin-bottom:14px;">Editar Cadastro</h2>
+    <input type="hidden" id="edit-id">
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <input type="text" id="edit-nome" placeholder="Nome" class="search-input" style="max-width:100%;">
+      <input type="text" id="edit-lider" placeholder="Líder" class="search-input" style="max-width:100%;">
+      <input type="text" id="edit-nomedamae" placeholder="Nome da Mãe" class="search-input" style="max-width:100%;">
+      <input type="text" id="edit-nascimento" placeholder="Data de Nascimento" class="search-input" style="max-width:100%;">
+      <input type="text" id="edit-telefone" placeholder="Telefone" class="search-input" style="max-width:100%;">
+      <input type="text" id="edit-escola" placeholder="Escola" class="search-input" style="max-width:100%;">
+      <input type="text" id="edit-municipio" placeholder="Município" class="search-input" style="max-width:100%;">
+    </div>
+    <div style="display:flex; gap:10px; margin-top:16px;">
+      <button onclick="salvarEdicao()" class="btn-primary" style="flex:1; justify-content:center;">Salvar</button>
+      <button onclick="document.getElementById('modal-edicao').style.display='none'" class="pill" style="flex:1; justify-content:center;">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-lider" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; padding:16px; z-index:50;">
+  <div class="card" style="width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:4px;">
+      <div>
+        <h2 class="card-title" id="modal-lider-nome" style="font-size:18px; margin-bottom:2px;">Líder</h2>
+        <p class="card-sub" id="modal-lider-sub" style="margin:0;">0 cadastros</p>
+      </div>
+      <button onclick="document.getElementById('modal-lider').style.display='none'" class="pill" style="flex-shrink:0;">✕</button>
+    </div>
+    <div id="modal-lider-lista" style="overflow-y:auto; margin-top:12px; flex:1;"></div>
+  </div>
+</div>
+
+<div id="modal-pendentes" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; padding:16px; z-index:50;">
+  <div class="card" style="width:100%; max-width:480px; max-height:80vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:4px;">
+      <div>
+        <h2 class="card-title" style="font-size:18px; margin-bottom:2px;">Dados Incompletos</h2>
+        <p class="card-sub" id="modal-pendentes-contagem" style="margin:0;">0 cadastros</p>
+      </div>
+      <button onclick="document.getElementById('modal-pendentes').style.display='none'" class="pill" style="flex-shrink:0;">✕</button>
+    </div>
+    <div id="modal-pendentes-lista" style="overflow-y:auto; margin-top:12px; flex:1;"></div>
+  </div>
+</div>
+
+
+<div id="modal-whatsapp" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; padding:16px; z-index:50;">
+  <div class="card" style="width:100%; max-width:520px; max-height:85vh; display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;">
+      <div>
+        <h2 class="card-title" style="font-size:18px; margin-bottom:2px;">💬 WhatsApp em Massa</h2>
+        <p class="card-sub" id="whats-contagem" style="margin:0;">0 contatos com WhatsApp cadastrado</p>
+      </div>
+      <button onclick="fecharModalWhatsApp()" class="pill" style="flex-shrink:0;">✕</button>
+    </div>
+
+    <textarea id="whats-mensagem" placeholder="Digite a mensagem... use {nome} para inserir o nome de cada pessoa automaticamente" style="width:100%; min-height:90px; margin-top:10px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit; resize:vertical;"></textarea>
+
+    <div style="margin-top:10px;">
+      <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Foto (opcional) — vai ser copiada pra você colar (Ctrl+V) dentro do WhatsApp</label>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="file" id="whats-foto" accept="image/*" style="font-size:11px; color:var(--muted); flex:1;">
+        <img id="whats-foto-preview" style="display:none; max-height:48px; max-width:48px; border-radius:6px; border:1px solid var(--border);">
+        <button id="whats-foto-remover" onclick="removerFotoWhatsApp()" class="pill" style="display:none; font-size:11px;">Remover</button>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+      <div style="display:flex; gap:8px;">
+        <button onclick="marcarTodosWhatsApp(true)" class="pill" style="font-size:11px;">Marcar todos</button>
+        <button onclick="marcarTodosWhatsApp(false)" class="pill" style="font-size:11px;">Desmarcar todos</button>
+      </div>
+      <span id="whats-selecionados" style="font-size:11px; color:var(--muted);">0 selecionados</span>
+    </div>
+
+    <div id="whats-lista" style="overflow-y:auto; margin-top:10px; flex:1; border:1px solid var(--border); border-radius:8px; padding:4px;"></div>
+
+    <div style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
+      <p id="whats-progresso" style="font-size:12px; color:var(--muted); margin:0 0 8px 0; text-align:center;">Clique em "Enviar Próximo" para abrir o WhatsApp de cada contato, um de cada vez.</p>
+      <div style="display:flex; gap:10px;">
+        <button id="whats-btn-enviar" onclick="enviarProximoWhatsApp()" class="btn-primary" style="flex:1; justify-content:center; background:#128C7E;">Enviar Próximo</button>
+        <button onclick="fecharModalWhatsApp()" class="pill" style="flex:1; justify-content:center;">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-cadastrar-lider" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); align-items:center; justify-content:center; padding:16px; z-index:50;">
+  <div class="card" style="width:100%; max-width:420px; background:var(--card); border:1px solid var(--border);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px;">
+      <h2 class="card-title" style="font-size:18px; margin-bottom:2px;">+ Cadastrar Líder</h2>
+      <button onclick="fecharModalCadastrarLider()" class="pill" style="flex-shrink:0;">✕</button>
+    </div>
+
+    <form id="form-cadastrar-lider">
+      <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Nome do líder</label>
+      <input id="novo-lider-nome" type="text" placeholder="Nome completo" required style="width:100%; margin-bottom:12px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit;">
+
+      <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Telefone (com DDD) — será o login dele</label>
+      <input id="novo-lider-telefone" type="text" placeholder="(96) 99999-9999" maxlength="15" required style="width:100%; margin-bottom:4px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit;">
+      <p style="font-size:11px; color:var(--muted); margin:0 0 14px 0;">A senha dele no formulário de cadastro serão os 4 últimos dígitos desse telefone.</p>
+
+      <p id="cadastrar-lider-erro" style="display:none; color:#f87171; font-size:12px; margin-bottom:10px;"></p>
+
+      <div style="display:flex; gap:10px;">
+        <button type="submit" id="btn-salvar-novo-lider" class="btn-primary" style="flex:1; justify-content:center;">Salvar Líder</button>
+        <button type="button" onclick="fecharModalCadastrarLider()" class="pill" style="flex:1; justify-content:center;">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+document.getElementById('dateNow').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+/* ---- Supabase Config & Integration ---- */
+const SUPABASE_URL = "https://giwnfttgradamcdbmceg.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdpd25mdHRncmFkYW1jZGJtY2VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MTAzMTcsImV4cCI6MjA5Nzk4NjMxN30.Du5QNQ4K_ImVEdOhmJPR8SIktwsxKn5vpvp53tMH3Rs"; 
+let supabaseClient = null;
+let listaCompletaBD = [];
+
+const zonaSul = {
+    "UNIVERSIDADE": [{ nome: "NEUZONA", votos: 1903 }, { nome: "UNIFAP", votos: 6251 }],
+    "ZERÃO": [{ nome: "ANA MARIA DA SILVA", votos: 1465 }, { nome: "ANTÔNIO MESSIAS", votos: 3514 }, { nome: "NANCI NINA COSTA", votos: 4300 }, { nome: "ANTÔNIO CASTRO", votos: 3945 }],
+    "NOVO BURITIZAL": [{ nome: "ELITA NUNES MELO", votos: 884 }, { nome: "RAIMUNDO ALENCAR", votos: 1024 }, { nome: "ANA LUIZA DE SOUZA", votos: 899 }],
+    "BURITIZAL": [{ nome: "EUNICE PICANÇO", votos: 1802 }, { nome: "CARMELITA DO CARMO", votos: 3100 }, { nome: "SEBASTIANA LENIR", votos: 4351 }, { nome: "MÁRIO QUIRINO", votos: 4949 }, { nome: "COELHO NETO", votos: 2451 }, { nome: "CECÍLIA PINTO", votos: 3992 }, { nome: "RORAIMA", votos: 1952 }, { nome: "ARACY MONT'ALVERNE", votos: 1904 }, { nome: "CEPA - CENTRO E. DO AP", votos: 2317 }, { nome: "GONÇALVES DIAS", votos: 3689 }],
+    "CUBA DE ASFALTO": [{ nome: "REINALDO DAMASCENO", votos: 3445 }],
+    "MUCA": [{ nome: "PARAÍSO DAS ACÁCIAS", votos: 1558 }, { nome: "LAURO CHAVES", votos: 3209 }, { nome: "ESFORÇO POPULAR", votos: 1743 }],
+    "PEDRINHAS": [{ nome: "MARIA DE NAZARÉ", votos: 3640 }, { nome: "RAIMUNDA VIRGOLINO", votos: 3912 }],
+    "JARDIM EQUATORIAL": [{ nome: "WILSON MALCHER", votos: 5046 }],
+    "BEIROL": [{ nome: "ZOLITO D. JESUS NUNES", votos: 4324 }, { nome: "PROF. ROBERTO - CENAP", votos: 2271 }],
+    "NOVA ESPERANÇA": [{ nome: "JOSEFA JUCILEIDE", votos: 4073 }],
+    "CONGÓS": [{ nome: "IRINEU DA GAMA PAZ", votos: 4541 }, { nome: "NELITA ROCHA", votos: 3021 }, { nome: "BENIGNA MOREIRA", votos: 3248 }],
+    "MARABAIXO": [{ nome: "RAIMUNDA GUEDES", votos: 2471 }, { nome: "NILTON BALIEIRO", votos: 4128 }, { nome: "IRMÃ CARMELA B.", votos: 3347 }],
+    "CABRALZINHO": [{ nome: "SEST/SENAT", votos: 578 }, { nome: "MARIA DO SOCORRO A.", votos: 3308 }],
+    "SANTA INÊS": [{ nome: "ANTÔNIO BARBOSA", votos: 1170 }, { nome: "SANTA INÊS", votos: 3525 }],
+    "TREM": [{ nome: "SANTINA RIOLI", votos: 4287 }, { nome: "AMAPÁ", votos: 3015 }, { nome: "ALEXANDRE V. TAVARES", votos: 4507 }, { nome: "HILDEMAR MAIA", votos: 1991 }, { nome: "JOSÉ FIRMO(CASTELO BRANCO)", votos: 2622 }],
+    "CENTRO": [{ nome: "GRAZIELA REIS", votos: 2062 }, { nome: "GABRIEL DE ALMEIDA C.", votos: 2695 }, { nome: "PROFESSORA GUITA", votos: 532 }, { nome: "ANTÔNIO CORDEIRO P.", votos: 1446 }, { nome: "GUANABARA", votos: 1541 }, { nome: "UEAP", votos: 2287 }],
+    "SANTA RITA": [{ nome: "LUCIMAR DEL CASTILHO", votos: 615 }, { nome: "TIRADENTES", votos: 4170 }, { nome: "MEU PÉ DE LARANJA", votos: 1245 }, { nome: "PREDICANDA LOPES", votos: 2804 }, { nome: "JOSÉ DE ANCHIETA", votos: 3452 }, { nome: "DOM ARISTIDES", votos: 2412 }, { nome: "COARACY NUNES", votos: 3385 }, { nome: "ARACY NASCIMENTO", votos: 1745 }],
+    "FAZENDINHA": [{ nome: "JOSÉ DO PATROCÍNIO", votos: 3092 }, { nome: "CAETANO DIAS TOMÁS", votos: 2251 }, { nome: "PROFª JACINTA MARIA", votos: 1469 }, { nome: "CACILDA FERREIRA V.", votos: 1531 }, { nome: "IVANHOÉ GONÇALVES", votos: 392 }, { nome: "MARIA ANGÉLICA P.", votos: 121 }],
+    "IGARAPÉ DA FORTALEZA": [{ nome: "PROFª MARGARIDA R.", votos: 1043 }],
+    "CORAÇÃO": [{ nome: "E.E.E.F. GOIÁS", votos: 1809 }]
+};
+
+const zonaNorte = {
+    "BRASIL NOVO": [{ nome: "ESCOLA BRASIL NOVO", votos: 1578 }, { nome: "MARIA CAVALCANTE", votos: 4954 }, { nome: "MARIA MÃE DE DEUS", votos: 190 }, { nome: "LÚCIA NEVES D.", votos: 2762 }],
+    "BURITIS": [{ nome: "ANTONIO FERREIRA", votos: 5071 }],
+    "MIRACEMA": [{ nome: "CARLOS ALBERTO V.", votos: 1105 }],
+    "BONÉ AZUL": [{ nome: "ONEIDE LIMA", votos: 2223 }],
+    "JARDIM FELICIDADE": [{ nome: "PROFª ELIANA FLEXA", votos: 447 }, { nome: "MARIA JOSÉ SOUZA", votos: 950 }, { nome: "SERAFINI COSTAPERÀRIA", votos: 2678 }, { nome: "MARIA NEUSA DO CARMO", votos: 3857 }, { nome: "JARDIM FELICIDADE", votos: 3389 }, { nome: "MARIA DO CARMO V.", votos: 4465 }],
+    "NOVO HORIZONTE": [{ nome: "DOM JOSÉ MARITANO", votos: 445 }, { nome: "DARCY RIBEIRO", votos: 2241 }, { nome: "RIVANDA NAZARÉ", votos: 3687 }, { nome: "RAIMUNDA DOS SANTOS", votos: 4245 }, { nome: "RAIMUNDA DA SILVA V.", votos: 3504 }],
+    "ILHA MIRIM": [{ nome: "SANDRA LOBATO", votos: 457 }],
+    "MACAPABA": [{ nome: "PROFª MARLY MARIA", votos: 391 }, { nome: "PROFª ANTÔNIO M. LOPES", votos: 4241 }],
+    "IPE": [{ nome: "MARIA CELES FERREIRA", votos: 641 }],
+    "RENASCER": [{ nome: "PROFº JOSÉ LEOVES", votos: 4389 }],
+    "INFRAERO": [{ nome: "PROFª JOSAFA AIRES", votos: 3866 }, { nome: "PROFª VERA LÚCIA", votos: 4652 }, { nome: "SANDRA DO SOCORRO", votos: 578 }],
+    "PANTANAL": [{ nome: "RISALVA FREITAS", votos: 2931 }],
+    "SÃO LÁZARO": [{ nome: "ODETE ALMEIDA", votos: 2065 }, { nome: "RUTH BEZERRA", votos: 3878 }, { nome: "ESTHER DA SILVA VIR.", votos: 4045 }, { nome: "ESCOLA SÃO LÁZARO", votos: 78 }],
+    "PACOVAL": [{ nome: "EUNICE DAS CHAGAS", votos: 2098 }, { nome: "JOSÉ DUARTE DE A.", votos: 3254 }, { nome: "DEUSOLINA SALES", votos: 4044 }, { nome: "MUNDO DA CRIANÇA", votos: 2235 }],
+    "LAGUINHO": [{ nome: "AZEVEDO COSTA", votos: 3842 }, { nome: "EDGAR LINO", votos: 2695 }, { nome: "AUGUSTO DOS ANJOS", votos: 3084 }],
+    "JESUS DE NAZARÉ": [{ nome: "RONDÔNIA", votos: 2242 }, { nome: "CASTRO ALVES", votos: 2091 }, { nome: "ESCOLA JESUS DE NAZARÉ", votos: 2623 }],
+    "PERPÉTUO SOCORRO": [{ nome: "JOSÉ DE ALENCAR", votos: 3144 }, { nome: "DEUZUITE CAVALCANTE", votos: 3098 }, { nome: "SANTUÁRIO PERPÉTUO", votos: 1465 }, { nome: "ARAÇARY CORRÊA", votos: 2846 }, { nome: "MARIA IVONE DE M.", votos: 4287 }, { nome: "MARIO ANDREAZZA", votos: 3238 }, { nome: "MAESTRO MIGUEL A.", votos: 1919 }]
+};
+
+/* ---- Dados dos demais municípios do Amapá (bairros/localidades e escolas) ---- */
+const itaubal = {
+    "CENTRO": [
+        { nome: "E.E. WILSON HILL DE ARAÚJO", votos: 2608 },
+        { nome: "E.E.E.F. J ALMEIDA", votos: 2099 }
+    ],
+      "CARMO DO MACACOARI": [
+        { nome: "E.E. ANA CLÁUDIA PICANÇO", votos: 1410 }
+    ],
+    "CURICACA": [
+        { nome: "E.E. ESTEVAM DE CARVALHO", votos: 946 }
+    ],
+    "FOZ DO RIO MACACOARI": [
+        { nome: "E.E.E.F. EUGÊNIO MACHADO", votos: 394 }
+    ],
+    "INAJÁ": [
+        { nome: "E.M. ANTÔNIO MAXIMINO", votos: 406 }
+    ],
+    "URUÁ": [
+        { nome: "E.E. ADELANO NUNES", votos: 419 }
+    ],
+    "IPIXUNA": [
+        { nome: "E.E. IPIXUNA GRANDE", votos: 357 }
+    ],
+    "IGARAPÉ NOVO": [
+        { nome: "E.M. MIGUEL JORGE HAUAT", votos: 205 }
+    ],
+    "PAU MULATO": [
+        { nome: "E.E. NOVA VIDA", votos: 157 }
+    ]
+};
+
+const ferreiraGomes = {
+    "CENTRO": [
+        { nome: "E.M. PASTOR J. TORQUATO", votos: 2251 },
+        { nome: "E.E. PROFª Mª IRACI TAVARES", votos: 2239 }
+    ],
+    "MONTANHA": [
+        { nome: "E.M. JOÃO F. CORDEIRO", votos: 2536 }
+    ],
+    "VILA DO PAREDÃO": [
+        { nome: "E.E. INDEPENDÊNCIA", votos: 671 }
+    ],
+    "FERREIRINHA": [
+        { nome: "E.M. VALDIR F. MENDES", votos: 251 }
+    ]
+};
+
+const cutiasDoAraguari = {
+    "CENTRO": [
+        { nome: "E.P.G. LOURIMAR SIMÕES", votos: 2414 },
+        { nome: "E.M.P.G. ALICE NASCIMENTO", votos: 1757 },
+        { nome: "CRECHE PINGO DE GENTE", votos: 792 }
+    ],
+    "GURUPORA": [
+        { nome: "E.M. ÁLVARO MARQUES", votos: 858 },
+    ],
+    "LIVRAMENTO": [
+        { nome: "E.M. DOMINGOS VALENTE", votos: 529 }
+    ],
+    "RIO ARAGUARI": [
+        { nome: "E.E. PRACUÚBA DO ARAGUARI", votos: 86 }
+    ]
+};
+
+const calçoene = {
+    "CENTRO": [
+        { nome: "E.E. PROFº SILVIO ELITO", votos: 1946 },
+        { nome: "E.E. LOBO D'ALMADA", votos: 1366},
+        { nome: "E.E.P.G. JOSÉ RODRIGUES", votos: 906 }
+    ],
+    "LOURENÇO": [
+        { nome: "E.E. JUVENAL GUIMARÃES", votos: 1836 }
+    ],
+    "BEIRA RIO": [
+        { nome: "E.E. AMARO BRASILINO", votos: 1031 }
+    ],
+    "CARNOT": [
+        { nome: "E.E. IVANILDO FORTE SILVA", votos: 809 }
+    ],
+    "PALMEIRAS": [
+        { nome: "E.E. PROF. NELMA SUELI", votos: 744 }
+    ],
+    "CALAFATE": [
+        { nome: "E.E.E. 1º GRAU DO CALAFATE", votos: 189 }
+    ],
+    "ILHA GRANDE": [
+        { nome: "E.M. RAIMUNDA DA SILVA", votos: 67 }
+    ],
+};
+
+const amapá = {
+    "SETE MANGUEIRAS": [
+        { nome: "E.E. VIDAL DE NEGREIROS", votos: 2478 },
+        { nome: "E.E. PROF.ª Mª ESMERALDINA", votos: 478 }
+    ],
+    "CENTRO": [
+        { nome: "E.E. VEIGA CABRAL", votos: 1072},
+        { nome: "E.M. PROF.ª SHIRLEY LOBATO", votos: 148 }
+    ],
+    "VILA NOVA": [
+        { nome: "E.M. LOURENÇO B. FAÇANHA", votos: 1049 }
+    ],
+    "NOVA ESPERANÇA": [
+        { nome: "E.E. MARIA DO CÉU DIAS", votos: 800 }
+    ],
+    "BOM JARDIM": [
+        { nome: "E.M. FRANCISCO ALVES", votos: 742 }
+    ],
+    "PIQUIÁ": [
+        { nome: "E.E. ROZEND N. FILHO", votos: 347 }
+    ],
+    "SUCURIJU": [
+        { nome: "E.E. ANTÔNIO TEIXEIRA GUERRA", votos: 238 }
+    ],
+    "CRUZEIRO": [
+        { nome: "ESCOLA MUN. DO CRUZEIRO", votos: 249 }
+    ]
+};
+
+const pedraBrancaDoAmapari = {
+    "CENTRO": [
+        { nome: "E.M.E.F. SÃO PEDRO", votos: 2993 },
+        { nome: "E.E. Mª H. CORDEIRO", votos: 3103 }
+    ],
+    "REVIVER": [
+        { nome: "E.E. ERIKA D. DE CASTRO", votos: 1118 }
+    ],
+    "ÁGUA FRIA": [
+         { nome: "E.E. JOSÉ F. DA SILVA", votos: 1132 }
+    ],
+    "COMUNIDADE RIOZINHO": [
+        { nome: "E.M.E.F. RIOZINHO", votos: 736 }
+    ],
+    "ALDEIA ARAMIRÃ": [
+        { nome: "E.E. DAS ALDEIAS WAIÃP", votos: 594 }
+    ],
+    "TUCANO II": [
+        { nome: "E.M. DO TUCANO II", votos: 423 }
+    ]
+};
+
+const portoGrande = {
+    "CENTRO": [
+        { nome: "E.E. PROF.ª Mª C. BOTELHO", votos: 3246 },
+        { nome: "E.M. ACRE", votos: 2493 }
+    ],
+    "AEROPORTO": [  
+        { nome: "E.E. ELIAS FREITAS TRAJANO", votos: 2934 },
+        { nome: "E.M. ADÃO FERREIRA", votos: 1816}
+    ],
+    "MATAPI": [
+        { nome: "E.E. MATAPI II", votos: 1206 }
+    ],
+     "CUPIXI": [
+        { nome: "E.M. CUPIXI", votos: 891 }
+    ],
+    "NOVA ESPERANÇA": [
+        { nome: "E.M. AMÉLIA BITENCOURT", votos: 787 }
+    ],
+    "CAMPO VERDE": [
+        { nome: "E.E. CAMPO VERDE", votos: 611 }
+    ],
+    "COMUNIDADE KM 142": [
+        { nome: "E.M. JOANA Mª DA SILVA", votos: 465 }
+         ],
+    "GARIMPO VILA NOVA": [
+        { nome: "E.E. SANTA MARIA", votos: 376 }
+         ],
+    "MUNGUBA": [
+        { nome: "E.M. ELILUCIA DE SOUZA", votos: 351 }
+         ],
+    "NOVA COLINA": [
+        { nome: "E.E. NOVA COLINA", votos: 316 }
+    ]
+};
+
+const pracuúba = {
+    "CENTRO": [
+        { nome: "E.M. AUGUSTO ROCHA", votos: 2153 },
+        { nome: "E.M. MANOEL HURBAND", votos: 102 }
+    ],
+    "CUJUBIM": [
+        { nome: "E.E. PEDRO MACIEL", votos: 598 },
+        { nome: "E.M. MARIA ENLLZA", votos: 150 }
+    ],
+    "FLEXAL": [
+        { nome: "E.E. PEDRO TEIXEIRA", votos: 545 },
+        { nome: "E.E. SÃO MIGUEL DO FLEXAL", votos: 59 }
+    ],
+    "BREU": [
+        { nome: "E.M. PROF.ª EVANDRO MARTINS", votos: 331 }
+    ],
+    "PERNAMBUCO": [
+        { nome: "E.E. JOÃO E. LOPES", votos: 145 }
+    ]
+};
+
+const serraDoNavio = {
+    "CENTRO": [
+        { nome: "E.E. DR. HERMELINO HERBSTER GUSMÃO", votos: 2663 }
+    ],
+    "ÁGUA BRANCA": [
+        { nome: "E.M. ÁLVARO MARQUES", votos: 1189 }
+    ],
+    "COMUNIDADE DO CACHAÇO": [
+        { nome: "E.E. SETE DE SETEMBRO", votos: 680 }
+    ]
+};
+
+const vitóriaDoJari = {
+    "PRAINHA": [
+        { nome: "E.M. FELINTO BATISTA", votos: 1075 },
+        { nome: "E.E. MUNGUBA DO JARI", votos: 2080 }
+    ],
+    "MINA": [
+        { nome: "E.E. TEOTÔNIO BRANDÃO", votos: 958 },
+        { nome: "E.M. ÁLVARO MARQUES", votos: 1500 }
+    ],
+    "CIDADE LIVRE": [
+        { nome: "E.M. FRANCISCA DE FREITAS", votos: 1752 }
+    ],
+    "SANTA CLARA": [
+        { nome: "E.M. BENEDITO PENEIVA", votos: 1306 }
+    ],
+    "COMUNIDADE DE TAPEREIRA": [
+        { nome: "ESCOLA", votos: 89 }
+    ],
+    "CENTRO": [
+        { nome: "E.M. ATERRO DO MURIACÁ", votos: 301 },
+        { nome: "E.P.G. SÃO JOÃO DO CAJARI", votos: 347 },
+        { nome: "CENTRO C. ILHAS ARUÃS", votos: 276 }
+        ],
+    "SÃO JOÃO DO CAJARI": [
+        { nome: "E.E. JARILÂNDIA", votos: 769 }
+    ]
+};
+
+const oiapoque = {
+    "CENTRO": [
+        { nome: "E.M.E.F ANETE FARIAS", votos: 819 },
+        { nome: "E.M.E.I. ABC", votos: 831 },
+        { nome: "E.P.G. JOAQUIM NABUCO", votos: 3725 },
+        { nome: "E.P.G. JOAQUIM CAETANO", votos: 2924 },
+        { nome: "INSTITUTO FEDERAL DO AMAPÁ (IFAP)", votos: 2114 },
+        { nome: "E.E. MÁRCIA DO SOCORRO", votos: 1606 }
+    ],
+    "UNIVERSIDADE": [
+        { nome: "CAMPUS UNIV. BINACIONAL", votos: 2752 }
+    ],
+    "PLANALTO": [
+        { nome: "E.M. PROF. RUI MARQUES", votos: 1627 }
+    ],
+    "INFRAERO": [
+        { nome: "CIRETRAN", votos: 1361 }
+    ],
+    "ALDEIA KUMARUMÃ": [
+        { nome: "E.P.G. KUMARUMÃ", votos: 1124 }
+    ],
+    "VILA VITÓRIA": [
+        { nome: "E.M. VILA VITÓRIA", votos: 975 }
+    ],
+    "ALDEIA DO MANGA": [
+        { nome: "E.P.G. MANGA", votos: 1070 }
+    ],
+    "ALDEIA KUMENÊ": [
+        { nome: "E.P.G. URUCAU", votos: 1055 }
+    ],
+    "ALDEIA SANTA IZABEL": [
+        { nome: "E.P.G. SANTA IZABEL", votos: 495 }
+    ],
+    "ALDEIA ESPÍRITO SANTO": [
+        { nome: "E.IND. JOÃO TEODORO FORTES", votos: 441 }
+    ],
+    "VILA BRASIL": [
+        { nome: "E.M. VILA BRASIL", votos: 229 }
+    ],
+    "VILA VELHA": [
+        { nome: "E.P.G. VILA VELHA", votos: 248 }
+    ],
+    "TAPARABU": [
+        { nome: "E.P.G. TAPARABU", votos: 256 }
+    ],
+    "CASSIPORÉ": [
+        { nome: "E.P.G. DO CASSIPORÉ", votos: 141 }
+    ],
+    "CLEVELÂNDIA": [
+        { nome: "E.E. DUQUE DE CAXIAS", votos: 105 }
+    ]
+};
+
+const laranjalDoJari = {
+    "AGRESTE": [
+        { nome: "E.M. MUNDO ENCANTADO", votos: 979 },
+        { nome: "E.E. MINEKO HAYASHIDA", votos: 1922 },
+        { nome: "E.M. RAIMUNDA R. CAPIBERIBE", votos: 1572 },
+        { nome: "E.E. Mª DE NAZARÉ RODRIGUES", votos: 2936 },
+        { nome: "E.M.B. PROF.ª TEREZA TELES", votos: 2062 }
+       
+    ],
+    "CENTRO": [
+        { nome: "E.M. VINHA DE LUZ", votos: 1952 },
+        { nome: "E.E. IRANDYR PONTES", votos: 0 },
+        { nome: "E.E. SÔNIA HENRIQUES", votos: 2087 }
+    ],
+    "LOTEAMENTO CAJARY": [
+        { nome: "C.E. WEBER ELDER QUEMEL", votos: 1544 },
+        { nome: "E.E. PROF.ª WANDA MARIA", votos: 2183 }
+    ],
+    "MALVINAS": [
+        { nome: "E.E. EMÍLIO MÉDICI", votos: 756 },
+        { nome: "E.M. JOÃO QUEIROGA", votos: 1164 }
+    ],
+    "LOTEAMENTO SARNEY": [
+        { nome: "E.E. AMIGO MANOEL MANDI", votos: 1084 },
+        { nome: "E.M. SANTA LÚCIA", votos: 872 }
+    ],
+    "CASTANHEIRA": [
+        { nome: "E.M. TEREZINHA QUEIROGA", votos: 1825 }
+    ],
+    "NOVA ESPERANÇA": [
+         { nome: "E.M. ZÉLIA CONCEIÇÃO", votos: 1311 }
+    ],
+    "SAGRADO CORAÇÃO": [
+        { nome: "E.P.G. JOSÉ RIBAMAR", votos: 1251 }
+    ],
+    "VILA ÁGUA BRANCA": [
+        { nome: "E.P.G. ÁGUA BRANCA DO CAJARI", votos: 755 }
+    ],
+    "ASSENTA NAZARÉ": [
+        { nome: "E.M. CONCEIÇÃO DO MURIACÁ", votos: 715 }
+    ],
+    "VILA DA PADARIA": [
+        { nome: "E.E. PADARIA", votos: 263 }
+    ],
+    "BOCA DO BRAÇO": [
+        { nome: "E.E. FRANCISCO O. FILHO", votos: 259 }
+    ],
+    "IRATAPURU": [
+        { nome: "E.M. SÃO FRANCISCO DO IRATAPURU", votos: 205 }
+    ],
+    "MURIACÁ": [
+        { nome: "E.M. CONCEIÇÃO DO MURIACÁ", votos: 182 }
+    ],
+    "COMUNIDADE DOS MARTINS": [
+        { nome: "E.M. CRISTO REDENTOR", votos: 169 }
+    ],
+    "AREA RURAL": [
+        { nome: "E.E. SANTA CLARA DO CAJAR", votos: 113 }
+    ]
+};
+
+const santana = {
+    "PIRATIVA": [
+        { nome: "E.E. FÓZ DO RIO PIRATIVA", votos: 481 }
+    ],
+    "PARAÍSO": [
+        { nome: "E.E. PROF.ª IZANETE V. SANTOS", votos: 4004 },
+        { nome: "E.M. PADRE FULVIO GIULLIANO", votos: 11 },
+        { nome: "E.E. SÃO BENTO", votos: 1552 },
+        { nome: "E.P.G. PADRE ANGELO BIRACHI", votos: 2991 },
+        { nome: "E.E. SÃO PAULO APÓSTOLO", votos: 1394 },
+        { nome: "E.M.B. PARAÍSO DA CIDADANIA", votos: 651 }
+    ],
+    "FORTALEZA": [
+        { nome: "E.M. PIAUÍ", votos: 1729 },
+        { nome: "E.E. IGARAPÉ DA FORTALEZA", votos: 3327 },
+        { nome: "E.E. ANA DIAS DA COSTA", votos: 525 }
+    ],
+    "HOSPITALIDADE": [
+        { nome: "E.P.G. ELIZABETH PICANÇO", votos: 4804 }
+    ],
+    "N. BRASÍLIA": [
+        { nome: "CENTRO DE ATENDIMENTO A JUVENTUDE", votos: 0 },
+        { nome: "E.E. JOANIRA AMORA DEL", votos: 2918 },
+        { nome: "E.P.G. JOSÉ RIBAMAR PESTAN", votos: 3752 }
+    ],
+    "N. UNIÃO": [
+        { nome: "CRECHE MAURO CESAR", votos: 0 },
+    ],
+    "PROVEDOR II": [
+        { nome: "E.E. DENISE VASCONCELOS", votos: 1071 }
+    ],
+    "VILA AMAZONAS": [
+        { nome: "E.M.E.F. MARIA IRANILDE", votos: 2441 }
+    ],
+    "FONTE NOVA": [
+        { nome: "E.E. JOSÉ DE ANCHIETA", votos: 4391 },
+        { nome: "E.M. IFAP", votos: 3350 },
+        { nome: "E.E. ANTONIO JANUARIO PEREIRA", votos: 2816 },
+        { nome: "E.M. GENTILA ANSELMO NOBRE", votos: 891 },
+        { nome: "E.E. FONTE NOVA", votos: 0 },
+        { nome: "E.M. PADRE FÚLVIO GUILLIANO", votos: 0 }
+    ],
+    "I. DO LAGO": [
+        { nome: "E.E. BELMIRO MACEDO MEDINA", votos: 560 },
+    ],
+    "MATÃO I": [
+        { nome: "E.P.G MATÃO I", votos: 255 }
+    ],
+    "MATÃO II": [
+        { nome: "ANEXO ESCOLA SÃO JOSÉ", votos: 111 }
+    ],
+    "MATÃO III": [
+        { nome: "E.P.G. MATÃO III", votos: 275 }
+    ],
+    "NOVO HORIZONTE": [
+        { nome: "E.E. MARIA C. D. TIBURCIO", votos: 3369 }
+    ],
+    "CONCEIÇÃO DO MARUANUM": [
+        { nome: "E.E. CONCEIÇÃO DO MARUANUM", votos: 183 }
+    ],
+    "PROVEDOR I": [
+        { nome: "E.M.E.F. MARIA LINAH DE SOUZA", votos: 1763 },    
+    ],
+    "ILHA DE SANTANA": [
+        { nome: "E.E. OSWALDO FERREIRA", votos: 2615 },
+        { nome: "E.E. LENINDO ALVES", votos: 0 }
+    ],
+    "ELESBÃO": [
+        { nome: "E.E. ALBERTO SANTOS DUMONT", votos: 2734 }
+    ],
+    "REMÉDIOS II": [
+        { nome: "E.E. PADRE SIMÃO CORRIDORI", votos: 1729 }
+    ],
+    "ANAUERAPUCU": [
+        { nome: "E.E. FRANCISCO O. FILHO", votos: 1374 }
+    ],
+    "COMERCIAL": [
+        { nome: "E.M. Nª Sª DA CONCEIÇÃO", votos: 1130 }
+    ],
+    "CAFEZAL": [
+        { nome: "E.M. ENSINO BÁSICO CAFEZAL", votos: 89 }
+    ],
+    "CENTRO": [
+        { nome: "E.E. SÃO JOÃO APÓSTOLO", votos: 2372 },
+        { nome: "E.P.G. FRANCISCO W. LOBATO", votos: 4625 },
+        { nome: "E.P.G. AMAZONAS", votos: 3295 },
+        { nome: "E.P.G. AUGUSTO ANTUNES", votos: 5477 },
+        { nome: "E.P.G. AFONSO ARINOS", votos: 3784 },
+        { nome: "E.P.G. BARROSO TOSTES", votos: 3548 },
+        { nome: "E.E. ALMIRANTE BARROSO", votos: 3585 },
+        { nome: "CENTRO SOCIAL VITÓRIA RÉGIA", votos: 0 }
+    ]
+};
+
+const mazagao = {
+    "MAZAGÃO VELHO": [
+        { nome: "E.M.B. ANTÔNIA S. SANTOS", votos: 1898 },
+        { nome: "E.M. PROF.ª IZIDORA DA SILVA", votos: 736 },
+    ],
+    "BOM JESUS": [
+        { nome: "E.M. DOMINGOS VALENTE BARRET", votos: 2168 },
+    ],
+    "MARACÁ": [
+        { nome: "E.E. EVILÁSIO P. DE ALMEIDA", votos: 1144 },
+        { nome: "E.M. SOROROCA", votos: 88 },
+        { nome: "E.M. CENTRAL DO MARACÁ", votos: 115 },
+        { nome: "E.M. E.M. RAIMUNDO A. VEIRA", votos: 91 },
+        { nome: "E.M. SÃO JOSÉ DO MARACÁ", votos: 91 },
+        { nome: "E.M. STA Mª DO FURO DO MARACÁ", votos: 124 },
+        { nome: "E.M. BARRO ALTO", votos: 173 },
+        { nome: "E.M. CONCEIÇÃO DO MARACA", votos: 65 },
+    ],
+    "UNIÃO": [ 
+        { nome: "E.M. PROF.ª OTÁVIO CALDEIRA", votos: 1102 }
+    ],
+    "CARVÃO": [
+        { nome: "E.E. FAGUNDES VARELA", votos: 952 }
+    ],
+    "MARANATA": [
+        { nome: "E.E. OSMUNDO VALENTE BARRETO", votos: 808 }
+    ],
+    "MACEDÔNIA": [
+        { nome: "E.P.G. DO CASSIPORÉ", votos: 678 }
+    ],
+    "BETEL": [
+        { nome: "E.M. DO RIO ARIRAMBA", votos: 623 }
+    ],
+    "RIO PRETO": [
+        { nome: "E.E. JOSÉ HILÁRIO", votos: 396 },
+        { nome: "E.M. PORÇÃO DO RIO PRETO", votos: 190 },
+        { nome: "E.E. AMILAR ARTUR BRENHA", votos: 198 }
+    ],
+    "MARIA SANTA": [
+        { nome: "E.M. VILHENA ALVES", votos: 423 }
+    ],
+    "RIO BANHA": [
+        { nome: "E.E. PRES. TANCREDONEVS", votos: 398 }
+    ],
+    "PIQUIAZAL": [
+        { nome: "E.E.P.G. PIQUIAZAL", votos: 372 }
+    ],
+    "RIO NAVIO": [
+        { nome: "E.E. RIO NAVIO", votos: 357 }
+    ],
+    "AÇAITUBA": [
+        { nome: "E.M. SÃO M. DE MONTE SINA", votos: 292 }
+    ],
+    "MUTUACÁ": [
+        { nome: "E.M.E.F BAIXO DO MUTUACÁ", votos: 200 }
+    ],
+    "CURUÇÁ": [
+        { nome: "E.M. CURUÇÁ", votos: 223 },
+    ],
+    "SÃO TIAGO": [
+        { nome: "E.M.PROF.ª LUCICARME BARRETO", votos: 1316 },
+    ],
+    "SANTA FÉ": [
+        { nome: "E.E. PANCADA DO CAMAIPI", votos: 217 }
+    ],
+    "CENTRO": [
+        { nome: "E.M. TIA RAIMUNDA PUREZA", votos: 417 },
+        { nome: "E.E. DR. MURILO BRAGA", votos: 2040 },
+        { nome: "E.E. DOM PEDRO I", votos: 2811 }
+    ],
+    "OLARIA": [
+        { nome: "E.M. MANOEL B. QUEIROZ", votos: 1671 },
+         { nome: "E.M. AMÉLIA DOS SANTOS", votos: 1188 }
+        ]
+};
+
+const tartarugalzinho = {
+    "GUANABARA DO ARAGUARI": [
+        { nome: "E.E. GUANABARA DO ARAGUARI", votos: 70 },
+],
+        "CENTRO": [
+        { nome: "E.E. REISALINA FERREIRA TOMA", votos: 2591 },
+        { nome: "E.E. PROF.ª Mª JOSÉ DE NAZ", votos: 1979 },
+        { nome: "E.E. LUCIANA RABELO LEITE", votos: 58 },
+        { nome: "E.M. ANALICE MACIEL", votos: 28 }
+        ],
+        "PLANALTINA": [
+        { nome: "E.E. ALZIRA DE LIMA SANTOS", votos: 2042 },
+        ],
+        "CEDRO": [
+            { nome: "E.E. DARCY RIBEIRO", votos: 710 },
+        ],
+        "BOM JESUS FERNANDES": [
+        { nome: "E.E. JUVENAL FARIAS", votos: 620 },
+        ],
+        "ITAUBAL": [
+        { nome: "E.E. WASHINGTON LUÍS", votos: 473 },
+        ],
+        "LAGO NOVO": [
+            { nome: "E.E. MARIA LUCILA BRAZÃO", votos: 450 },
+        ],
+        "NOVA VIDA": [
+            { nome: "E.E. NOVA VIDA", votos: 355 },
+        ],
+        "UAPEZAL": [
+            { nome: "E.E. UAPEZAL", votos: 296 }
+        ],
+        "ENTRE RIOS": [
+            { nome: "E.E. ENTRE RIOS", votos: 251 },
+        ],
+        "FAZ MODELO": [
+            { nome: "E.E. JOÃO BRAZÃO DA SILVA", votos: 250 },
+        ],
+        "BONITO DO APOREMA": [
+            { nome: "E.E.BONÍTO DO APOREMA", votos: 211 },
+        ],
+        "ASSENTAMENTO JANARAY II": [
+            { nome: "E.E. CHICO MENDES", votos: 209 },
+        ],
+        "ASSENTAMENTO APOREMA": [
+            { nome: "E.M. IGARAPÉ DO PEIXE", votos: 189 },
+        ],
+        "ANDIROBA": [
+            { nome: "E.M. ANDIROBA DO LAGO NOVO", votos: 198 },
+        ],
+        "LIVRAMENTO DO APOREMA": [
+            { nome: "E.E. BASILLO PEREIRA DE SOUZA", votos: 186 },
+        ],
+        "PONTA DO SOCORRO": [
+            { nome: "E.E. SÃO SEBASTIÃO", votos: 168 },
+        ],
+        "NAZARÉ DO APOREMA": [
+            { nome: "E.E. NAZARÉ DO APOREMA", votos: 130 },
+        ],
+        "SÃO TOMÉ DO APOREMA": [
+            { nome: "E.E. SÃO TOMÉ DO APOREMA", votos: 91 }
+    ]
+};
+
+const coordenadasEscolas = {
+    "NEUZONA": { lat: -0.01325581839103886, lng: -51.08922785967678 },
+    "UNIFAP": { lat: -0.006031663743905855, lng: -51.08266703461849 },
+    "ANA MARIA DA SILVA": { lat: 0.0016230343990655067, lng: -51.0879754481122 },
+    "ANTÔNIO MESSIAS": { lat: -0.0019083367615696904, lng: -51.10064676160615 },
+    "NANCI NINA COSTA": { lat: 0.001502061384054156, lng: -51.08753117879551 },
+    "ANTÔNIO CASTRO": { lat: -0.0017708809409660955, lng: -51.09711209044147 },
+    "ELITA NUNES MELO": { lat: 0.018410307382121245, lng: -51.07905074811241 },
+    "RAIMUNDO ALENCAR": { lat: 0.011931974863000145, lng: -51.082282363454006 },
+    "ANA LUIZA DE SOUZA": { lat: 0.018635032522503214, lng: -51.07973289228946 },
+    "EUNICE PICANÇO": { lat: 0.022358992030561332, lng: -51.07827834811243 },
+    "CARMELITA DO CARMO": { lat: 0.027857049683480548, lng: -51.074891890441656 },
+    "SEBASTIANA LENIR": { lat: 0.02606803435025527, lng: -51.07280590578326 },
+    "MÁRIO QUIRINO": { lat: 0.015632288350694863, lng: -51.08226303092296 },
+    "COELHO NETO": { lat: 0.024845992023474386, lng: -51.07642411927693 },
+    "CECÍLIA PINTO": { lat: 0.014335163214581243, lng: -51.07006786160622 },
+    "RORAIMA": { lat: 0.023890763191294923, lng: -51.07088270578332 },
+    "ARACY MONT'ALVERNE": { lat: 0.02086009203459363, lng: -51.07526640578333 },
+    "CEPA - CENTRO E. DO AP": { lat: 0.028576690170102625, lng: -51.07507664811244 },
+    "GONÇALVES DIAS": { lat: 0.020506503683633447, lng: -51.07352804811251 },
+    "REINALDO DAMASCENO": { lat: 0.02368919202683397, lng: -51.08617834811242 },
+    "PARAÍSO DAS ACÁCIAS": { lat: 0.011224734385017142, lng: -51.07433674811228 },
+    "LAURO CHAVES": { lat: 0.013482463216329085, lng: -51.07439036345401 },
+    "ESFORÇO POPULAR": { lat: 0.011886619041244226, lng: -51.07741364811257 },
+    "MARIA DE NAZARÉ": { lat: 0.008219805554381688, lng: -51.06474691927694 },
+    "RAIMUNDA VIRGOLINO": { lat: 0.0077606362412343316, lng: -51.06415703461853 },
+    "WILSON MALCHER": { lat: 0.006653007407304734, lng: -51.06870972112475 },
+    "ZOLITO D. JESUS NUNES": { lat: 0.018313034370391792, lng: -51.06334027879559 },
+    "PROF. ROBERTO - CENAP": { lat: 0.018316096534230403, lng: -51.06123230119432 },
+    "JOSEFA JUCILEIDE": { lat: 0.03186768464285616, lng: -51.08272522112479 },
+    "IRINEU DA GAMA PAZ": { lat: 0.009123519045740791, lng: -51.09350647694776 },
+    "NELITA ROCHA": { lat: 0.009720919044810403, lng: -51.09206097694784 },
+    "BENIGNA MOREIRA": { lat: 0.01263583438238826, lng: -51.08707904811234 },
+    "RAIMUNDA GUEDES": { lat: 0.03749991897831871, lng: -51.1264285904417 },
+    "NILTON BALIEIRO": { lat: 0.044369876620240584, lng: -51.12784430763116 },
+    "IRMÃ CARMELA B.": { lat: 0.04650992075043808, lng: -51.126490434650414 },
+    "SEST/SENAT": { lat: 0.03340914782501077, lng: -51.11831467510007 },
+    "MARIA DO SOCORRO A.": { lat: 0.0318549478297226, lng: -51.11589440578322 },
+    "ANTÔNIO BARBOSA": { lat: 0.015043899477126614, lng: -51.057702364810645 },
+    "SANTA INÊS": { lat: 0.02625221901070528, lng: -51.05415476345408 },
+    "SANTINA RIOLI": { lat: 0.027756163179928225, lng: -51.060845661606415 },
+    "AMAPÁ": { lat: 0.023382961347804442, lng: -51.061607492289625 },
+    "ALEXANDRE V. TAVARES": { lat: 0.029479605505577246, lng: -51.0597762499604 },
+    "HILDEMAR MAIA": { lat: 0.028342245997858843, lng: -51.05628172112475 },
+    "JOSÉ FIRMO(CASTELO BRANCO)": { lat: 0.02391820552133173, lng: -51.06242746160632 },
+    "GRAZIELA REIS": { lat: 0.03901706130659466, lng: -51.05688600578331 },
+    "GABRIEL DE ALMEIDA C.": { lat: 0.040668034300620916, lng: -51.06119725975861 },
+    "PROFESSORA GUITA": { lat: 0.03257084598855926, lng: -51.06258827694779 },
+    "ANTÔNIO CORDEIRO P.": { lat: 0.04071827480181952, lng: -51.052167576947916 },
+    "GUANABARA": { lat: 0.03774529197890132, lng: -51.05615019228945 },
+    "UEAP": { lat: 0.038542247808410084, lng: -51.05559140578315 },
+    "LUCIMAR DEL CASTILHO": { lat: 0.036818307317264855, lng: -51.07477515606298 },
+    "TIRADENTES": { lat: 0.04211984779586216, lng: -51.07256880578334 },
+    "MEU PÉ DE LARANJA": { lat: 0.03669424781456319, lng: -51.06892473461874 },
+    "PREDICANDA LOPES": { lat: 0.03863017664156976, lng: -51.080874248112515 },
+    "JOSÉ DE ANCHIETA": { lat: 0.03633066131458268, lng: -51.06873547694795 },
+    "DOM ARISTIDES": { lat: 0.03217146316554771, lng: -51.06695053646649 },
+    "COARACY NUNES": { lat: 0.03432930549009256, lng: -51.06492000578327 },
+    "ARACY NASCIMENTO": { lat: 0.039733849637498014, lng: -51.0735895658611 },
+    "JOSÉ DO PATROCÍNIO": { lat: -0.05417218097458415, lng: -51.113058234618265 },
+    "CAETANO DIAS TOMÁS": { lat: -0.0460252097911214, lng: -51.116755900239454 },
+    "PROFª JACINTA MARIA": { lat: -0.047109307967426114, lng: -51.1048766750997 },
+    "CACILDA FERREIRA V.": { lat: -0.04709492329618987, lng: -51.112600394696074 },
+    "IVANHOÉ GONÇALVES": { lat: -0.01920927082572043, lng: -51.10890233721602 },
+    "MARIA ANGÉLICA P.": { lat: -0.0495892791425523, lng: -51.11825866160594 },
+    "PROFª MARGARIDA R.": { lat: -0.04867443862739089, lng: -51.13741510578282 },
+    "E.E.E.F. GOIÁS": { lat: 0.020030690188803584, lng: -51.172696405656005 },
+    "ESCOLA BRASIL NOVO": { lat: 0.08852154579935193, lng: -51.085985532771154 },
+    "MARIA CAVALCANTE": { lat: 0.09246167635693005, lng: -51.0860721057837 },
+    "MARIA MÃE DE DEUS": { lat: 0.09438330516466444, lng: -51.0838906499606 },
+    "LÚCIA NEVES D.": { lat: 0.09881324749088809, lng: -51.08446959839235 },
+    "ANTONIO FERREIRA": { lat: 0.07142443235286372, lng: -51.08976751927725 },
+    "CARLOS ALBERTO V.": { lat: 0.0585730594250664, lng: -51.094985076947964 },
+    "ONEIDE LIMA": { lat: 0.08382574759092236, lng: -51.07267377935509 },
+    "PROFª ELIANA FLEXA": { lat: 0.08526866110980191, lng: -51.05675953277107 },
+    "MARIA JOSÉ SOUZA": { lat: 0.09707410514426675, lng: -51.05622511927728 },
+    "SERAFINI COSTAPERÀRIA": { lat: 0.09353111870611187, lng: -51.05903863461879 },
+    "MARIA NEUSA DO CARMO": { lat: 0.0842019187642388, lng: -51.06512337140474 },
+    "JARDIM FELICIDADE": { lat: 0.08459886288303023, lng: -51.06261043461877 },
+    "MARIA DO CARMO V.": { lat: 0.09686949160765569, lng: -51.05665830763134 },
+    "DOM JOSÉ MARITANO": { lat: 0.09293410167030346, lng: -51.05034340449478 },
+    "DARCY RIBEIRO": { lat: 0.08782022050560458, lng: -51.04021418915338 },
+    "RIVANDA NAZARÉ": { lat: 0.09704620514449738, lng: -51.04956487565959 },
+    "RAIMUNDA DOS SANTOS": { lat: 0.09579937284032992, lng: -51.04959131373395 },
+    "RAIMUNDA DA SILVA V.": { lat: 0.09909413394853792, lng: -51.04589830634269 },
+    "SANDRA LOBATO": { lat: 0.06402462067696833, lng: -51.09338050264695 },
+    "PROFª MARLY MARIA": { lat: 0.08137723320795816, lng: -51.09438611310147 },
+    "PROFª ANTÔNIO M. LOPES": { lat: 0.08639288322464385, lng: -51.095025315428586 },
+    "MARIA CELES FERREIRA": { lat: 0.1020164, lng: -51.0615464 },
+    "PROFº JOSÉ LEOVES": { lat: 0.073145359382134, lng: -51.05077890634264 },
+    "PROFª JOSAFA AIRES": { lat: 0.07310288999956288, lng: -51.062515725939015 },
+    "PROFª VERA LÚCIA": { lat: 0.07102539000998648, lng: -51.081905106901814 },
+    "SANDRA DO SOCORRO": { lat: 0.0638958747269656, lng: -51.09360580819035 },
+    "RISALVA FREITAS": { lat: 0.07126997290527917, lng: -51.045640075659385 },
+    "ODETE ALMEIDA": { lat: 0.07670877467578904, lng: -51.05601820449479 },
+    "RUTH BEZERRA": { lat: 0.06733126119939106, lng: -51.056841333330205 },
+    "ESTHER DA SILVA VIR.": { lat: 0.07261116117476298, lng: -51.059189658469926 },
+    "ESCOLA SÃO LÁZARO": { lat: 0.07061416297859983, lng: -51.05941721983634 },
+    "EUNICE DAS CHAGAS": { lat: 0.060575291868045666, lng: -51.054672658469855 },
+    "JOSÉ DUARTE DE A.": { lat: 0.05894943240527711, lng: -51.05263379284874 },
+    "DEUSOLINA SALES": { lat: 0.05566486306449302, lng: -51.05759343148229 },
+    "MUNDO DA CRIANÇA": { lat: 0.05793291890046479, lng: -51.05366764682402 },
+    "AZEVEDO COSTA": { lat: 0.04457194778678996, lng: -51.055042576948026 },
+    "EDGAR LINO": { lat: 0.04896421893765148, lng: -51.051925689153094 },
+    "AUGUSTO DOS ANJOS": { lat: 0.05096510542472231, lng: -51.054999892848706 },
+    "RONDÔNIA": { lat: 0.04556977661550948, lng: -51.058787608190286 },
+    "CASTRO ALVES": { lat: 0.05232573061015661, lng: -51.0586268179885 },
+    "ESCOLA JESUS DE NAZARÉ": { lat: 0.04564327478783355, lng: -51.06300491614069 },
+    "JOSÉ DE ALENCAR": { lat: 0.04385064596030457, lng: -51.04918543148225 },
+    "DEUZUITE CAVALCANTE": { lat: 0.04591356311148817, lng: -51.044181021684025 },
+    "SANTUÁRIO PERPÉTUO": { lat: 0.04625992077474135, lng: -51.05038812610919 },
+    "ARAÇARY CORRÊA": { lat: 0.044098261290435044, lng: -51.048494598392104 },
+    "MARIA IVONE DE M.": { lat: 0.052792547753695934, lng: -51.042018511886006 },
+    "MARIO ANDREAZZA": { lat: 0.04866431711470502, lng: -51.04608084682394 },
+    "MAESTRO MIGUEL A.": { lat: 0.044539347786918045, lng: -51.046644475659285 },
+
+    /* ---- SANTANA ---- */
+    "E.E. FÓZ DO RIO PIRATIVA": { lat: 0.185588, lng: -51.442053 },
+    "E.E. PROF.ª IZANETE V. SANTOS": { lat: -0.029403, lng: -51.1672726 },
+    "E.M. PADRE FULVIO GIULLIANO": { lat: -0.0196737, lng: -51.1683187 },
+    "E.E. SÃO BENTO": { lat: -0.0305412, lng: -51.1739029 },
+    "E.P.G. PADRE ANGELO BIRACHI": { lat: -0.0299667, lng: -51.1745345 },
+    "E.E. SÃO PAULO APÓSTOLO": { lat: -0.0274203, lng: -51.1792575 },
+    "E.M.B. PARAÍSO DA CIDADANIA": { lat: -0.0300, lng: -51.1740 },
+    "E.M. PIAUÍ": { lat: -0.0494403, lng: -51.1448561 },
+    "E.E. IGARAPÉ DA FORTALEZA": { lat: -0.0473258, lng: -51.1451875 },
+    "E.E. ANA DIAS DA COSTA": { lat: -0.0486438, lng: -51.1433164 },
+    "E.P.G. ELIZABETH PICANÇO": { lat: -0.0466366, lng: -51.1720211 },
+    "CENTRO DE ATENDIMENTO A JUVENTUDE": { lat: -0.0376, lng: -51.1656146 },
+    "E.E. JOANIRA AMORA DEL": { lat: -0.0407326, lng: -51.1658407 },
+    "E.P.G. JOSÉ RIBAMAR PESTAN": { lat: -0.0465029, lng: -51.1602745 },
+    "CRECHE MAURO CESAR": { lat: -0.0334906, lng: -51.1650996 },
+    "E.E. DENISE VASCONCELOS": { lat: -0.0448288, lng: -51.1525578 },
+    "E.M.E.F. MARIA IRANILDE": { lat: -0.0551013, lng: -51.1589722 },
+    "E.E. JOSÉ DE ANCHIETA": { lat: -0.0196, lng: -51.1694 },
+    "E.M. IFAP": { lat: -0.0203674, lng: -51.1810756 },
+    "E.E. ANTONIO JANUARIO PEREIRA": { lat: -0.0211166, lng: -51.1694412 },
+    "E.M. GENTILA ANSELMO NOBRE": { lat: -0.0212163, lng: -51.1769021 },
+    "E.E. FONTE NOVA": { lat: -0.0192151, lng: -51.1694158 },
+    "E.M. PADRE FÚLVIO GUILLIANO": { lat: -0.0196737, lng: -51.1683187 },
+    "E.E. BELMIRO MACEDO MEDINA": { lat: 0.072649, lng: -51.4414071 },
+    "E.P.G MATÃO I": { lat: -0.0556, lng: -51.1645 },
+    "ANEXO ESCOLA SÃO JOSÉ": { lat: -0.0556, lng: -51.1645 },
+    "E.P.G. MATÃO III": { lat: -0.0556, lng: -51.1645 },
+    "E.E. MARIA C. D. TIBURCIO": { lat: -0.0555998, lng: -51.1645444 },
+    "E.E. CONCEIÇÃO DO MARUANUM": { lat: 0.185588, lng: -51.442053 },
+    "E.M.E.F. MARIA LINAH DE SOUZA": { lat: -0.041172, lng: -51.157889 },
+    "E.E. OSWALDO FERREIRA": { lat: -0.0667458, lng: -51.1729528 },
+    "E.E. LENINDO ALVES": { lat: 0.185588, lng: -51.442053 },
+    "E.E. ALBERTO SANTOS DUMONT": { lat: -0.0470694, lng: -51.1862778 },
+    "E.E. PADRE SIMÃO CORRIDORI": { lat: -0.0539533, lng: -51.1639211 },
+    "E.E. FRANCISCO O. FILHO": { lat: -0.0679662, lng: -51.2581475 },
+    "E.M. Nª Sª DA CONCEIÇÃO": { lat: -0.0497528, lng: -51.1762805 },
+    "E.M. ENSINO BÁSICO CAFEZAL": { lat: 0.2176883, lng: -51.5721983 },
+    "E.E. SÃO JOÃO APÓSTOLO": { lat: -0.0241287, lng: -51.1796572 },
+    "E.P.G. FRANCISCO W. LOBATO": { lat: -0.0367878, lng: -51.1659144 },
+    "E.P.G. AMAZONAS": { lat: -0.0401477, lng: -51.172318 },
+    "E.P.G. AUGUSTO ANTUNES": { lat: -0.0437096, lng: -51.164758 },
+    "E.P.G. AFONSO ARINOS": { lat: -0.0552603, lng: -51.1784826 },
+    "E.P.G. BARROSO TOSTES": { lat: -0.0415832, lng: -51.1766501 },
+    "E.E. ALMIRANTE BARROSO": { lat: -0.0486096, lng: -51.1776143 },
+    "CENTRO SOCIAL VITÓRIA RÉGIA": { lat: -0.0415832, lng: -51.1766501 },
+
+    /* ---- ITAUBAL ---- */
+    "E.E. WILSON HILL DE ARAÚJO": { lat: 0.6016973, lng: -50.699602 },
+    "E.E.E.F. J ALMEIDA": { lat: 0.6030784, lng: -50.7006895 },
+    "E.E. ANA CLÁUDIA PICANÇO": { lat: 0.5065919, lng: -50.750632 },
+    "E.E. ESTEVAM DE CARVALHO": { lat: 0.5810929, lng: -50.7995198 },
+    "E.E.E.F. EUGÊNIO MACHADO": { lat: 0.5065919, lng: -50.750632 },
+    "E.M. ANTÔNIO MAXIMINO": { lat: 0.6030784, lng: -50.7006895 },
+    "E.E. ADELANO NUNES": { lat: 0.6030784, lng: -50.7006895 },
+    "E.E. IPIXUNA GRANDE": { lat: 0.6030784, lng: -50.7006895 },
+    "E.M. MIGUEL JORGE HAUAT": { lat: 0.6030784, lng: -50.7006895 },
+
+    /* ---- FERREIRA GOMES ---- */
+    "E.M. PASTOR J. TORQUATO": { lat: 0.8581591, lng: -51.18372300000001 },
+    "E.E. PROFª Mª IRACI TAVARES": { lat: 0.8581591, lng: -51.18372300000001 },
+    "E.M. JOÃO F. CORDEIRO": { lat: 0.8525449, lng: -51.1762359 },
+    "E.E. INDEPENDÊNCIA": { lat: 0.8581591, lng: -51.18372300000001 },
+    "E.M. VALDIR F. MENDES": { lat: 0.8581591, lng: -51.18372300000001 },
+
+    /* ---- CUTIAS ---- */
+    "E.P.G. LOURIMAR SIMÕES": { lat: 0.9696089, lng: -50.7979026 },
+    "E.M.P.G. ALICE NASCIMENTO": { lat: 0.9696089, lng: -50.7979026 },
+    "CRECHE PINGO DE GENTE": { lat: 0.9696089, lng: -50.7979026 },
+    "E.M. ÁLVARO MARQUES": { lat: 0.9692602, lng: -50.7994654 },
+    "E.M. DOMINGOS VALENTE": { lat: 0.9692602, lng: -50.7994654 },
+    "E.E. PRACUÚBA DO ARAGUARI": { lat: 0.9692602, lng: -50.7994654 },
+
+    /* ---- CALÇOENE ---- */
+    "E.E. PROFº SILVIO ELITO": { lat: 2.4974464, lng: -50.9571755 },
+    "E.E. LOBO D'ALMADA": { lat: 2.4949522, lng: -50.9482138 },
+    "E.E.P.G. JOSÉ RODRIGUES": { lat: 2.4949522, lng: -50.9482138 },
+    "E.E. JUVENAL GUIMARÃES": { lat: 2.307765, lng: -51.63243 },
+    "E.E. AMARO BRASILINO": { lat: 2.4949522, lng: -50.9482138 },
+    "E.E. IVANILDO FORTE SILVA": { lat: 2.4949522, lng: -50.9482138 },
+    "E.E. PROF. NELMA SUELI": { lat: 2.4949522, lng: -50.9482138 },
+    "E.E.E. 1º GRAU DO CALAFATE": { lat: 2.4949522, lng: -50.9482138 },
+    "E.M. RAIMUNDA DA SILVA": { lat: 2.4949522, lng: -50.9482138 },
+
+    /* ---- AMAPÁ (cidade) ---- */
+    "E.E. VIDAL DE NEGREIROS": { lat: 2.0471148, lng: -50.7922747 },
+    "E.E. PROF.ª Mª ESMERALDINA": { lat: 2.0471148, lng: -50.7922747 },
+    "E.E. VEIGA CABRAL": { lat: 2.0497557, lng: -50.7918401 },
+    "E.M. PROF.ª SHIRLEY LOBATO": { lat: 2.0471148, lng: -50.7922747 },
+    "E.M. LOURENÇO B. FAÇANHA": { lat: 2.0471148, lng: -50.7922747 },
+    "E.E. MARIA DO CÉU DIAS": { lat: 2.0471148, lng: -50.7922747 },
+    "E.M. FRANCISCO ALVES": { lat: 2.0471148, lng: -50.7922747 },
+    "E.E. ROZEND N. FILHO": { lat: 2.0471148, lng: -50.7922747 },
+    "E.E. ANTÔNIO TEIXEIRA GUERRA": { lat: 2.0471148, lng: -50.7922747 },
+    "ESCOLA MUN. DO CRUZEIRO": { lat: 2.0471148, lng: -50.7922747 },
+
+    /* ---- PEDRA BRANCA DO AMAPARI ---- */
+    "E.M.E.F. SÃO PEDRO": { lat: 0.7770175, lng: -51.9531025 },
+    "E.E. Mª H. CORDEIRO": { lat: 0.7770372, lng: -51.9515787 },
+    "E.E. ERIKA D. DE CASTRO": { lat: 0.7743868, lng: -51.9586835 },
+    "E.E. JOSÉ F. DA SILVA": { lat: 0.7770372, lng: -51.9515787 },
+    "E.M.E.F. RIOZINHO": { lat: 0.7770372, lng: -51.9515787 },
+    "E.E. DAS ALDEIAS WAIÃP": { lat: 0.7770372, lng: -51.9515787 },
+    "E.M. DO TUCANO II": { lat: 0.7770372, lng: -51.9515787 },
+
+    /* ---- PORTO GRANDE ---- */
+    "E.E. PROF.ª Mª C. BOTELHO": { lat: 0.7070408, lng: -51.4118874 },
+    "E.M. ACRE": { lat: 0.7079948, lng: -51.4100688 },
+    "E.E. ELIAS FREITAS TRAJANO": { lat: 0.7079948, lng: -51.4100688 },
+    "E.M. ADÃO FERREIRA": { lat: 0.7079948, lng: -51.4100688 },
+    "E.E. MATAPI II": { lat: 0.7079948, lng: -51.4100688 },
+    "E.M. CUPIXI": { lat: 0.7079948, lng: -51.4100688 },
+    "E.M. AMÉLIA BITENCOURT": { lat: 0.7079948, lng: -51.4100688 },
+    "E.E. CAMPO VERDE": { lat: 0.7079948, lng: -51.4100688 },
+    "E.M. JOANA Mª DA SILVA": { lat: 0.7079948, lng: -51.4100688 },
+    "E.E. SANTA MARIA": { lat: 0.7079948, lng: -51.4100688 },
+    "E.M. ELILUCIA DE SOUZA": { lat: 0.7079948, lng: -51.4100688 },
+    "E.E. NOVA COLINA": { lat: 0.7079948, lng: -51.4100688 },
+
+    /* ---- PRACUÚBA ---- */
+    "E.M. AUGUSTO ROCHA": { lat: 1.7432453, lng: -50.7868425 },
+    "E.M. MANOEL HURBAND": { lat: 1.7443538, lng: -50.7849289 },
+    "E.E. PEDRO MACIEL": { lat: 1.7443538, lng: -50.7849289 },
+    "E.M. MARIA ENLLZA": { lat: 1.7443538, lng: -50.7849289 },
+    "E.E. PEDRO TEIXEIRA": { lat: 1.7443538, lng: -50.7849289 },
+    "E.E. SÃO MIGUEL DO FLEXAL": { lat: 1.7443538, lng: -50.7849289 },
+    "E.M. PROF.ª EVANDRO MARTINS": { lat: 1.7443538, lng: -50.7849289 },
+    "E.E. JOÃO E. LOPES": { lat: 1.7443538, lng: -50.7849289 },
+
+    /* ---- SERRA DO NAVIO ---- */
+    "E.E. DR. HERMELINO HERBSTER GUSMÃO": { lat: 0.9034868, lng: -52.0019542 },
+    "E.M. ÁLVARO MARQUES ": { lat: 0.9391071, lng: -51.9955092 },
+    "E.E. SETE DE SETEMBRO": { lat: 0.901711, lng: -52.0033808 },
+
+    /* ---- VITÓRIA DO JARI ---- */
+    "E.M. FELINTO BATISTA": { lat: -0.9263978, lng: -52.4239783 },
+    "E.E. MUNGUBA DO JARI": { lat: -0.9263978, lng: -52.4239783 },
+    "E.E. TEOTÔNIO BRANDÃO": { lat: -0.9263978, lng: -52.4239783 },
+    "E.M. ATERRO DO MURIACÁ": { lat: -0.9263978, lng: -52.4239783 },
+    "E.P.G. SÃO JOÃO DO CAJARI": { lat: -0.9263978, lng: -52.4239783 },
+    "CENTRO C. ILHAS ARUÃS": { lat: -0.9263978, lng: -52.4239783 },
+    "E.M. FRANCISCA DE FREITAS": { lat: -0.9263978, lng: -52.4239783 },
+    "E.M. BENEDITO PENEIVA": { lat: -0.9263978, lng: -52.4239783 },
+    "ESCOLA": { lat: -0.9263978, lng: -52.4239783 },
+    "E.E. JARILÂNDIA": { lat: -0.9263978, lng: -52.4239783 },
+
+    /* ---- OIAPOQUE ---- */
+    "E.M.E.F ANETE FARIAS": { lat: 3.8429349, lng: -51.8344456 },
+    "E.M.E.I. ABC": { lat: 3.8429349, lng: -51.8344456 },
+    "E.P.G. JOAQUIM NABUCO": { lat: 3.8438084, lng: -51.8342623 },
+    "E.P.G. JOAQUIM CAETANO": { lat: 3.8474444, lng: -51.8355179 },
+    "INSTITUTO FEDERAL DO AMAPÁ (IFAP)": { lat: 3.8488462, lng: -51.8326252 },
+    "E.E. MÁRCIA DO SOCORRO": { lat: 3.8429349, lng: -51.8344456 },
+    "CAMPUS UNIV. BINACIONAL": { lat: 3.8488462, lng: -51.8326252 },
+    "E.M. PROF. RUI MARQUES": { lat: 3.8411377, lng: -51.831343 },
+    "CIRETRAN": { lat: 3.8429349, lng: -51.8344456 },
+    "E.P.G. KUMARUMÃ": { lat: 3.3789579, lng: -51.2974381 },
+    "E.M. VILA VITÓRIA": { lat: 3.8832129, lng: -51.7965097 },
+    "E.P.G. MANGA": { lat: 3.7249999, lng: -51.7205859 },
+    "E.P.G. URUCAU": { lat: 3.8429349, lng: -51.8344456 },
+    "E.P.G. SANTA IZABEL": { lat: 3.7767315, lng: -51.583857 },
+    "E.IND. JOÃO TEODORO FORTES": { lat: 3.8429349, lng: -51.8344456 },
+    "E.M. VILA BRASIL": { lat: 3.1808922, lng: -52.2868647 },
+    "E.P.G. VILA VELHA": { lat: 3.2277226, lng: -51.2307534 },
+    "E.P.G. TAPARABU": { lat: 3.9171636, lng: -51.7803692 },
+    "E.P.G. DO CASSIPORÉ": { lat: 3.8429349, lng: -51.8344456 },
+    "E.E. DUQUE DE CAXIAS": { lat: 3.8156286, lng: -51.8622781 },
+
+    /* ---- LARANJAL DO JARI ---- */
+    "E.M. MUNDO ENCANTADO": { lat: -0.8416007, lng: -52.5203210 },
+    "E.E. MINEKO HAYASHIDA": { lat: -0.8416007, lng: -52.5203210 },
+    "E.M. RAIMUNDA R. CAPIBERIBE": { lat: -0.8416007, lng: -52.5203210 },
+    "E.E. Mª DE NAZARÉ RODRIGUES": { lat: -0.8416007, lng: -52.5203210 },
+    "E.M.B. PROF.ª TEREZA TELES": { lat: -0.8416007, lng: -52.5203210 },
+    "E.M. VINHA DE LUZ": { lat: -0.8521706, lng: -52.5351217 },
+    "E.E. IRANDYR PONTES": { lat: -0.8397651, lng: -52.5189889 },
+    "E.E. SÔNIA HENRIQUES": { lat: -0.8397651, lng: -52.5189889 },
+    "C.E. WEBER ELDER QUEMEL": { lat: -0.8397651, lng: -52.5189889 },
+    "E.E. PROF.ª WANDA MARIA": { lat: -0.8397651, lng: -52.5189889 },
+    "E.E. EMÍLIO MÉDICI": { lat: -0.8531827, lng: -52.5391806 },
+    "E.M. JOÃO QUEIROGA": { lat: -0.8531827, lng: -52.5391806 },
+    "E.E. AMIGO MANOEL MANDI": { lat: -0.8213528, lng: -52.4983341 },
+    "E.M. SANTA LÚCIA": { lat: -0.8213528, lng: -52.4983341 },
+    "E.M. TEREZINHA QUEIROGA": { lat: -0.817072, lng: -52.51195 },
+    "E.M. ZÉLIA CONCEIÇÃO": { lat: -0.8397651, lng: -52.5189889 },
+    "E.P.G. JOSÉ RIBAMAR": { lat: -0.8397651, lng: -52.5189889 },
+    "E.P.G. ÁGUA BRANCA DO CAJARI": { lat: -0.8397651, lng: -52.5189889 },
+    "E.M. CONCEIÇÃO DO MURIACÁ": { lat: -0.8397651, lng: -52.5189889 },
+    "E.E. PADARIA": { lat: -0.8397651, lng: -52.5189889 },
+    "E.E. FRANCISCO O. FILHO ": { lat: -0.8397651, lng: -52.5189889 },
+    "E.M. SÃO FRANCISCO DO IRATAPURU": { lat: 0.1385882, lng: -52.5129013 },
+    "E.M. CRISTO REDENTOR": { lat: -0.8397651, lng: -52.5189889 },
+    "E.E. SANTA CLARA DO CAJAR": { lat: -0.8397651, lng: -52.5189889 },
+
+    /* ---- MAZAGÃO ---- */
+    "E.M.B. ANTÔNIA S. SANTOS": { lat: -0.2196783, lng: -51.4323383 },
+    "E.M. PROF.ª IZIDORA DA SILVA": { lat: -0.2196783, lng: -51.4323383 },
+    "E.M. DOMINGOS VALENTE BARRET": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. EVILÁSIO P. DE ALMEIDA": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. SOROROCA": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. CENTRAL DO MARACÁ": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. E.M. RAIMUNDO A. VEIRA": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. SÃO JOSÉ DO MARACÁ": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. STA Mª DO FURO DO MARACÁ": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. BARRO ALTO": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. CONCEIÇÃO DO MARACA": { lat: -0.1820705, lng: -51.7349465 },
+    "E.M. PROF.ª OTÁVIO CALDEIRA": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. FAGUNDES VARELA": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. OSMUNDO VALENTE BARRETO": { lat: -0.1154774, lng: -51.2877839 },
+    "E.P.G. DO CASSIPORÉ ": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. DO RIO ARIRAMBA": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. JOSÉ HILÁRIO": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. PORÇÃO DO RIO PRETO": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. AMILAR ARTUR BRENHA": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. VILHENA ALVES": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. PRES. TANCREDONEVS": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E.P.G. PIQUIAZAL": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. RIO NAVIO": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. SÃO M. DE MONTE SINA": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M.E.F BAIXO DO MUTUACÁ": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. CURUÇÁ": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M.PROF.ª LUCICARME BARRETO": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. PANCADA DO CAMAIPI": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. TIA RAIMUNDA PUREZA": { lat: -0.1154774, lng: -51.2877839 },
+    "E.E. DR. MURILO BRAGA": { lat: -0.1147673, lng: -51.2854983 },
+    "E.E. DOM PEDRO I": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. MANOEL B. QUEIROZ": { lat: -0.1154774, lng: -51.2877839 },
+    "E.M. AMÉLIA DOS SANTOS": { lat: -0.1154774, lng: -51.2877839 },
+
+    /* ---- TARTARUGALZINHO ---- */
+    "E.E. GUANABARA DO ARAGUARI": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. REISALINA FERREIRA TOMA": { lat: 1.5099829, lng: -50.9127708 },
+    "E.E. PROF.ª Mª JOSÉ DE NAZ": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. LUCIANA RABELO LEITE": { lat: 1.5056624, lng: -50.9118916 },
+    "E.M. ANALICE MACIEL": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. ALZIRA DE LIMA SANTOS": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. DARCY RIBEIRO": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. JUVENAL FARIAS": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. WASHINGTON LUÍS": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. MARIA LUCILA BRAZÃO": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. NOVA VIDA ": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. UAPEZAL": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. ENTRE RIOS": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. JOÃO BRAZÃO DA SILVA": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E.BONÍTO DO APOREMA": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. CHICO MENDES": { lat: 1.5056624, lng: -50.9118916 },
+    "E.M. IGARAPÉ DO PEIXE": { lat: 1.5056624, lng: -50.9118916 },
+    "E.M. ANDIROBA DO LAGO NOVO": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. BASILLO PEREIRA DE SOUZA": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. SÃO SEBASTIÃO": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. NAZARÉ DO APOREMA": { lat: 1.5056624, lng: -50.9118916 },
+    "E.E. SÃO TOMÉ DO APOREMA": { lat: 1.5056624, lng: -50.9118916 }
+};
+
+/* Mapa de município -> conjunto de bairros/localidades e escolas */
+const municipiosData = {
+    "Amapá": amapá,
+    "Calçoene": calçoene,
+    "Cutias": cutiasDoAraguari,
+    "Ferreira Gomes": ferreiraGomes,
+    "Itaubal": itaubal,
+    "Laranjal do Jari": laranjalDoJari,
+    "Macapá": { ...zonaSul, ...zonaNorte },
+    "Mazagão": mazagao,
+    "Oiapoque": oiapoque,
+    "Pedra Branca do Amapari": pedraBrancaDoAmapari,
+    "Porto Grande": portoGrande,
+    "Pracuúba": pracuúba,
+    "Santana": santana,
+    "Serra do Navio": serraDoNavio,
+    "Tartarugalzinho": tartarugalzinho,
+    "Vitória do Jari": vitóriaDoJari
+};
+
+let dadosMunicipioAtivo = municipiosData["Macapá"];
+let zonaAtiva = zonaSul;
+let bairroAtivo = Object.keys(dadosMunicipioAtivo)[0];
+let schoolActive = "";
+
+/* ---- Tema claro/escuro ---- */
+function aplicarTema(tema) {
+    const ehClaro = tema === 'light';
+    document.body.classList.toggle('light-theme', ehClaro);
+    const icon = document.getElementById('theme-toggle-icon');
+    const label = document.getElementById('theme-toggle-label');
+    if (icon) icon.textContent = ehClaro ? '☀️' : '🌙';
+    if (label) label.textContent = ehClaro ? 'Modo claro' : 'Modo escuro';
+}
+
+function alternarTema() {
+    const temaAtual = document.body.classList.contains('light-theme') ? 'light' : 'dark';
+    const novoTema = temaAtual === 'light' ? 'dark' : 'light';
+    localStorage.setItem('e4-tema', novoTema);
+    aplicarTema(novoTema);
+}
+
+/* ---- Login (usuário/senha fixos) ---- */
+const CREDENCIAIS_PAINEL = { usuario: "RB", senha: "10" };
+
+function mostrarPainel(nomeUsuario) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.querySelector('.shell').style.display = 'flex';
+
+    const avatarEl = document.getElementById('sb-avatar');
+    const nomeEl = document.getElementById('sb-user-nome');
+    if (avatarEl) avatarEl.textContent = nomeUsuario ? nomeUsuario[0].toUpperCase() : '?';
+    if (nomeEl) nomeEl.textContent = nomeUsuario || '—';
+
+    aplicarTema(localStorage.getItem('e4-tema') || 'dark');
+    renderizarAbas();
+    mudarBairro(bairroAtivo);
+
+    if (window.supabase) {
+        try {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            carregarMeta();
+            baixarDadosDaNuvem();
+        } catch (e) { console.error(e); }
+    }
+}
+
+function mostrarTelaLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.querySelector('.shell').style.display = 'none';
+}
+
+function fazerLogin(event) {
+    event.preventDefault();
+    const usuario = document.getElementById('login-usuario').value.trim();
+    const senha = document.getElementById('login-senha').value;
+    const erroEl = document.getElementById('login-erro');
+
+    erroEl.style.display = 'none';
+
+    if (usuario !== CREDENCIAIS_PAINEL.usuario || senha !== CREDENCIAIS_PAINEL.senha) {
+        erroEl.textContent = 'Usuário ou senha incorretos.';
+        erroEl.style.display = 'block';
+        return;
+    }
+
+    localStorage.setItem('e4-logado', usuario);
+    mostrarPainel(usuario);
+}
+
+function fazerLogout() {
+    localStorage.removeItem('e4-logado');
+    mostrarTelaLogin();
+    document.getElementById('login-form').reset();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const usuarioSalvo = localStorage.getItem('e4-logado');
+    if (usuarioSalvo) {
+        mostrarPainel(usuarioSalvo);
+    } else {
+        mostrarTelaLogin();
+    }
+});
+
+/* ---- Meta de cadastros (persistida na tabela 'configuracoes' do Supabase) ---- */
+async function carregarMeta() {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient.from('configuracoes').select('valor').eq('chave', 'meta_cadastros').maybeSingle();
+    if (error) {
+        console.error("Erro ao carregar meta (a tabela 'configuracoes' existe no Supabase?):", error.message);
+        return;
+    }
+    if (data && data.valor) {
+        const elInput = document.getElementById("valor-meta");
+        const elDisplay = document.getElementById("meta-valor-display");
+        if (elInput) elInput.value = data.valor;
+        if (elDisplay) elDisplay.textContent = data.valor;
+    }
+}
+
+// Lógica para alternar o município ativo nas abas
+let municipioAtivo = 'Macapá';
+
+function filtrarMunicipio(municipio) {
+    municipioAtivo = municipio;
+    
+    // Atualiza o estilo visual dos botões de abas
+    const botoes = document.querySelectorAll('#abas-municipios button');
+    botoes.forEach(btn => {
+        if (btn.textContent.trim().toLowerCase() === municipio.toLowerCase()) {
+            btn.style.background = 'var(--blue)';
+            btn.style.color = '#fff';
+            btn.style.borderColor = 'var(--blue)';
+            btn.style.fontWeight = '600';
+        } else {
+            btn.style.background = 'var(--surface)';
+            btn.style.color = 'var(--text)';
+            btn.style.borderColor = 'var(--border)';
+            btn.style.fontWeight = 'normal';
+        }
+    });
+
+    console.log("Município selecionado:", municipioAtivo);
+
+    // Troca o conjunto de bairros/escolas para o município selecionado
+    dadosMunicipioAtivo = municipiosData[municipio] || {};
+    const bairros = Object.keys(dadosMunicipioAtivo);
+    bairroAtivo = bairros.length ? bairros[0] : "";
+
+    renderizarAbas();
+
+    if (bairroAtivo) {
+        mudarBairro(bairroAtivo);
+    } else {
+        const container = document.getElementById("lista-escolas");
+        if (container) container.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0;">Nenhum bairro cadastrado para este município.</p>';
+        const titulo = document.getElementById("bairro-titulo");
+        const qtd = document.getElementById("qtd-escolas");
+        if (titulo) titulo.textContent = municipio;
+        if (qtd) qtd.textContent = "0 escolas";
+    }
+
+    // Se os seus registros do Supabase tiverem uma coluna de município, 
+    // você pode filtrar ou recarregar os dados aqui (ex: item.municipio === municipioAtivo).
+}
+
+/* ---- Cadastros com dados incompletos (nome, mãe, nascimento, telefone) ---- */
+function obterCadastrosIncompletos() {
+    return listaCompletaBD.filter(item => {
+        return !item.nome ||
+               !(item.nome_mae || item.mae) ||
+               !(item.data_nascimento || item.nascimento) ||
+               !item.whatsapp;
+    });
+}
+
+function abrirModalPendentes() {
+    const pendentes = obterCadastrosIncompletos();
+    const lista = document.getElementById("modal-pendentes-lista");
+    const contagem = document.getElementById("modal-pendentes-contagem");
+
+    contagem.textContent = `${pendentes.length} cadastro${pendentes.length === 1 ? '' : 's'} com dado faltando`;
+
+    if (!pendentes.length) {
+        lista.innerHTML = '<p style="color:var(--muted); font-size:13px; padding:12px 0;">Nenhum cadastro incompleto 🎉</p>';
+    } else {
+        lista.innerHTML = pendentes.map(p => {
+            const faltando = [];
+            if (!p.nome) faltando.push("Nome");
+            if (!(p.nome_mae || p.mae)) faltando.push("Nome da mãe");
+            if (!(p.data_nascimento || p.nascimento)) faltando.push("Data de nascimento");
+            if (!p.whatsapp) faltando.push("Telefone");
+
+            return `
+                <div style="padding:10px 4px; border-bottom:1px solid var(--border);">
+                    <div style="font-weight:600; font-size:13.5px;">${p.nome || '(sem nome)'}</div>
+                    <div style="font-size:11.5px; color:var(--muted); margin-top:2px;">${p.escola || 'Escola não informada'}${p.lider ? ' · ' + p.lider : ''}</div>
+                    <div style="font-size:11.5px; color:var(--red); margin-top:4px;">Falta: ${faltando.join(', ')}</div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    document.getElementById("modal-pendentes").style.display = "flex";
+}
+
+async function baixarDadosDaNuvem() {
+    if (!supabaseClient) return;
+    const { data } = await supabaseClient.from('cadastros_votos').select('*');
+    listaCompletaBD = data || [];
+    await baixarLideresDaNuvem();
+    
+    const elementoMeta = document.getElementById("valor-meta");
+    const metaTotal = elementoMeta ? parseInt(elementoMeta.value) || 0 : 2500;
+    
+    const total = listaCompletaBD.length;
+    const faltaParaMeta = Math.max(0, metaTotal - total);
+
+    const pendentes = obterCadastrosIncompletos().length;
+
+    document.getElementById("total-geral").textContent = total;
+    document.getElementById("total-geral-meta").textContent = faltaParaMeta; 
+    
+    const elPendentes = document.getElementById("total-pendentes");
+    const elTextoPendentes = document.getElementById("texto-pendentes");
+    
+    if (elPendentes && elTextoPendentes) {
+        elPendentes.textContent = pendentes;
+        elTextoPendentes.textContent = "Clique para ver a lista"; 
+        elPendentes.style.color = ""; 
+    }
+
+    document.getElementById("stat-cadastros-mapeados").textContent = total;
+    document.getElementById("stat-cadastros-aptos").textContent = total; 
+    document.getElementById("stat-mapa-total").textContent = total;
+    document.getElementById("stat-mapa-ativos").textContent = total;
+
+    renderizarCardsEscolas();
+    if (schoolActive) renderizarTabela();
+    renderizarGraficosDinamicos();
+    renderizarUltimos7Dias();
+    renderizarGraficoBairrosEZonas();
+    if (typeof renderUsers === 'function') renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+    atualizarMapasComSupabase();
+}
+
+function renderizarAbas() {
+    const container = document.getElementById("abas-bairros");
+    if (!container) return;
+    container.innerHTML = "";
+    const todosBairros = dadosMunicipioAtivo;
+
+    Object.keys(todosBairros).forEach(bairro => { 
+        const btn = document.createElement("button");
+        btn.textContent = bairro; 
+        btn.className = `pill ${bairro === bairroAtivo ? 'filled' : ''}`;
+        btn.style.fontSize = "11px";
+        btn.style.padding = "6px 10px";
+        btn.style.justifyContent = "center";
+        btn.style.alignItems = "center";
+        btn.style.textAlign = "center";
+        btn.style.minHeight = "44px";
+        btn.style.lineHeight = "1.3";
+        btn.style.display = "flex";
+        btn.onclick = () => mudarBairro(bairro);
+        container.appendChild(btn);
+    }); 
+}
+
+function mudarBairro(nomeBairro) {
+    bairroAtivo = nomeBairro;
+    renderizarAbas();
+    
+    const lista = dadosMunicipioAtivo[nomeBairro];
+    if (!lista) return;
+
+    let votos = 0;
+    lista.forEach(e => votos += e.votos);
+    
+    const titulo = document.getElementById("bairro-titulo");
+    const qtd = document.getElementById("qtd-escolas");
+    
+    if (titulo) titulo.textContent = `${nomeBairro} - ${votos.toLocaleString('pt-BR')} votos`;
+    if (qtd) qtd.textContent = `${lista.length} escolas`;
+    
+    zonaAtiva = dadosMunicipioAtivo;
+    renderizarCardsEscolas();
+}
+
+function renderizarCardsEscolas() {
+    const container = document.getElementById("lista-escolas");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (!zonaAtiva[bairroAtivo]) return;
+
+    zonaAtiva[bairroAtivo].forEach(escolaObj => {
+        const qtdCadastros = listaCompletaBD.filter(i => {
+            const escolaBate = String(i.escola).trim().toUpperCase() === String(escolaObj.nome).trim().toUpperCase();
+            const municipioItem = i.municipio || 'Macapá';
+            return escolaBate && municipioItem === municipioAtivo;
+        }).length;
+        
+        const card = document.createElement("div");
+        card.style.cssText = `padding: 12px; border-radius: 8px; border: 1px solid ${escolaObj.nome === schoolActive ? 'var(--blue)' : 'var(--border)'}; background: ${escolaObj.nome === schoolActive ? 'rgba(59,130,246,0.1)' : 'var(--card-2)'}; cursor: pointer; display: flex; justify-content: space-between; align-items: center;`;
+        card.onclick = () => { 
+            const inputPesq = document.getElementById("inputPesquisa");
+            if(inputPesq) inputPesq.value = "";
+            schoolActive = escolaObj.nome; 
+            renderizarCardsEscolas(); 
+            renderizarTabela(); 
+        };
+
+        card.innerHTML = `
+            <div>
+                <h4 style="font-size: 13px; font-weight: 600; margin: 0 0 2px; color: #fff;">${escolaObj.nome}</h4>
+                <p style="font-size: 11px; color: var(--blue); margin: 0; font-weight: 600;">${escolaObj.votos.toLocaleString()} votos</p>
+            </div>
+            <span style="font-size: 11px; background: var(--card); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; color: var(--muted);">${qtdCadastros} cad.</span>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function obterListaFiltradaAtual() {
+    const inputPesquisa = document.getElementById("inputPesquisa");
+    const termo = (inputPesquisa ? inputPesquisa.value : "").toLowerCase().trim();
+    const normalizar = (str) => String(str || '').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    return listaCompletaBD.filter(item => {
+        if (termo !== "") {
+            const lider = normalizar(item.lider);
+            const termoNorm = normalizar(termo);
+            return lider.split(/[\s\/]+/).some(palavra => palavra.startsWith(termoNorm));
+        }
+        const escolaBanco = normalizar(item.escola);
+        const escolaSelecionada = normalizar(schoolActive);
+        const municipioItem = normalizar(item.municipio || 'Macapá');
+        const municipioSel = normalizar(municipioAtivo);
+        return escolaBanco === escolaSelecionada && municipioItem === municipioSel;
+    });
+}
+
+function renderizarTabela() {
+    const tbody = document.getElementById("tabela-cadastrados");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+    const listaFiltrada = obterListaFiltradaAtual();
+
+    if (listaFiltrada.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="padding: 24px; text-align: center; color: var(--muted);">Nenhum resultado encontrado.</td></tr>`;
+        return;
+    }
+
+   listaFiltrada.forEach(item => {
+        const nomeSeguro = item.nome ? item.nome.replace(/'/g, "\\'") : '';
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid var(--border)";
+        tr.innerHTML = `
+            <td style="padding: 10px 8px;">${item.lider || 'N/A'}</td>
+            <td style="padding: 10px 8px; font-weight: 600; color: #fff;">${item.nome || 'N/A'}</td>
+            <td style="padding: 10px 8px;">${item.nome_mae || item.mae || 'N/A'}</td> 
+            <td style="padding: 10px 8px;">${item.data_nascimento || item.nascimento || 'N/A'}</td> <!-- Exibindo a data de nascimento -->
+            <td style="padding: 10px 8px;">${item.whatsapp || 'N/A'}</td>
+            <td style="padding: 10px 8px;">${item.escola || 'N/A'}</td>
+            <td style="padding: 10px 8px; text-align: center;">
+                <button onclick="abrirConsultaTSE('${nomeSeguro}')" style="background:var(--blue); color:#fff; border:none; padding:3px 8px; border-radius:4px; font-size:10px; cursor:pointer; margin-bottom:2px; display:block; width:100%;">TSE</button>
+                <button onclick="abrirModalEdicao(${item.id})" style="background:var(--amber); color:#000; border:none; padding:3px 8px; border-radius:4px; font-size:10px; cursor:pointer; margin-bottom:2px; display:block; width:100%; font-weight:600;">Editar</button>
+                <button onclick="deletarRegistro(${item.id})" style="background:transparent; color:var(--red); border:none; font-size:10px; cursor:pointer;">Excluir</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+const inputPesqEl = document.getElementById("inputPesquisa");
+if (inputPesqEl) {
+    inputPesqEl.addEventListener("input", () => { renderizarTabela(); });
+}
+
+/* ---- WhatsApp em Massa ---- */
+let filaWhatsApp = [];
+let indiceWhatsApp = 0;
+let fotoWhatsAppBlob = null;
+
+const inputFotoWhatsApp = document.getElementById("whats-foto");
+if (inputFotoWhatsApp) {
+    inputFotoWhatsApp.addEventListener("change", async (e) => {
+        const arquivo = e.target.files[0];
+        const preview = document.getElementById("whats-foto-preview");
+        const btnRemover = document.getElementById("whats-foto-remover");
+        if (!arquivo) { fotoWhatsAppBlob = null; preview.style.display = "none"; btnRemover.style.display = "none"; return; }
+        try {
+            // Converte para PNG via canvas, formato com melhor suporte na área de transferência
+            const bitmap = await createImageBitmap(arquivo);
+            const canvas = document.createElement("canvas");
+            canvas.width = bitmap.width;
+            canvas.height = bitmap.height;
+            canvas.getContext("2d").drawImage(bitmap, 0, 0);
+            fotoWhatsAppBlob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+            preview.src = URL.createObjectURL(fotoWhatsAppBlob);
+            preview.style.display = "block";
+            btnRemover.style.display = "inline-flex";
+        } catch (err) {
+            console.error("Erro ao processar imagem:", err);
+            alert("Não consegui processar essa imagem. Tente outro arquivo.");
+            fotoWhatsAppBlob = null;
+        }
+    });
+}
+
+function removerFotoWhatsApp() {
+    fotoWhatsAppBlob = null;
+    const input = document.getElementById("whats-foto");
+    if (input) input.value = "";
+    document.getElementById("whats-foto-preview").style.display = "none";
+    document.getElementById("whats-foto-remover").style.display = "none";
+}
+
+function formatarNumeroWhatsApp(numero) {
+    let digitos = String(numero || '').replace(/\D/g, '');
+    if (!digitos) return null;
+    if (digitos.length <= 11) digitos = '55' + digitos; // adiciona DDI Brasil se não tiver
+    return digitos;
+}
+
+function abrirModalWhatsApp() {
+    const lista = obterListaFiltradaAtual().filter(item => formatarNumeroWhatsApp(item.whatsapp));
+    const listaEl = document.getElementById("whats-lista");
+    const contagemEl = document.getElementById("whats-contagem");
+
+    contagemEl.textContent = `${lista.length} contato${lista.length === 1 ? '' : 's'} com WhatsApp cadastrado`;
+
+    if (lista.length === 0) {
+        listaEl.innerHTML = `<p style="padding:16px; text-align:center; color:var(--muted); font-size:12px;">Nenhum contato com WhatsApp encontrado nesta pesquisa.</p>`;
+    } else {
+        listaEl.innerHTML = lista.map((item, i) => `
+            <label style="display:flex; align-items:center; gap:8px; padding:6px 8px; border-bottom:1px solid var(--border); font-size:12px; cursor:pointer;">
+                <input type="checkbox" class="whats-check" data-idx="${i}" checked onchange="atualizarContadorSelecionadosWhats()">
+                <span style="flex:1;">${item.nome || 'N/A'} <span style="color:var(--muted);">— ${item.whatsapp}</span></span>
+            </label>
+        `).join('');
+    }
+
+    filaWhatsApp = lista;
+    indiceWhatsApp = 0;
+    document.getElementById("whats-mensagem").value = "";
+    removerFotoWhatsApp();
+    document.getElementById("whats-progresso").textContent = 'Clique em "Enviar Próximo" para abrir o WhatsApp de cada contato, um de cada vez.';
+    document.getElementById("whats-btn-enviar").textContent = "Enviar Próximo";
+    document.getElementById("whats-btn-enviar").disabled = false;
+    atualizarContadorSelecionadosWhats();
+
+    document.getElementById("modal-whatsapp").style.display = "flex";
+}
+
+function fecharModalWhatsApp() {
+    document.getElementById("modal-whatsapp").style.display = "none";
+}
+
+function marcarTodosWhatsApp(marcar) {
+    document.querySelectorAll(".whats-check").forEach(chk => { chk.checked = marcar; });
+    atualizarContadorSelecionadosWhats();
+}
+
+function atualizarContadorSelecionadosWhats() {
+    const total = document.querySelectorAll(".whats-check:checked").length;
+    document.getElementById("whats-selecionados").textContent = `${total} selecionado${total === 1 ? '' : 's'}`;
+}
+
+async function enviarProximoWhatsApp() {
+    const mensagem = document.getElementById("whats-mensagem").value.trim();
+    if (!mensagem) { alert("Digite uma mensagem antes de enviar."); return; }
+
+    const checks = Array.from(document.querySelectorAll(".whats-check"));
+
+    while (indiceWhatsApp < filaWhatsApp.length) {
+        const chk = checks[indiceWhatsApp];
+        if (chk && !chk.checked) { indiceWhatsApp++; continue; }
+        const item = filaWhatsApp[indiceWhatsApp];
+        const numero = formatarNumeroWhatsApp(item.whatsapp);
+        const texto = mensagem.replace(/\{nome\}/gi, (item.nome || '').split(' ')[0]);
+
+        let fotoCopiadaComSucesso = false;
+        if (fotoWhatsAppBlob) {
+            try {
+                // Copia a foto ANTES de abrir a nova aba, enquanto esta página ainda está em foco
+                await navigator.clipboard.write([new ClipboardItem({ "image/png": fotoWhatsAppBlob })]);
+                fotoCopiadaComSucesso = true;
+            } catch (err) {
+                console.error("Erro ao copiar imagem:", err);
+            }
+        }
+
+        window.open(`whatsapp://send?phone=${numero}&text=${encodeURIComponent(texto)}`, '_blank');
+
+        indiceWhatsApp++;
+        const restantes = checks.slice(indiceWhatsApp).filter(c => c.checked).length;
+        const statusFoto = fotoWhatsAppBlob ? (fotoCopiadaComSucesso ? ' Foto copiada.' : ' Foto NÃO copiada — anexe manualmente.') : '';
+        document.getElementById("whats-progresso").textContent = `Enviado para ${item.nome || 'contato'}.${statusFoto} Faltam ${restantes} contato${restantes === 1 ? '' : 's'}.`;
+        if (restantes === 0) {
+            document.getElementById("whats-btn-enviar").textContent = "Concluído ✓";
+            document.getElementById("whats-btn-enviar").disabled = true;
+        }
+        return;
+    }
+}
+
+
+async function deletarRegistro(id) {
+    if (!confirm("Tem certeza que deseja excluir este cadastro?")) return;
+    try {
+        const { error } = await supabaseClient.from('cadastros_votos').delete().eq('id', id);
+        if (error) {
+            alert("Erro ao excluir: " + error.message);
+        } else {
+            alert("Registro excluído com sucesso!");
+            await baixarDadosDaNuvem(); 
+            renderizarTabela();
+        }
+    } catch (err) {
+        console.error("Erro inesperado:", err);
+    }
+}
+
+async function salvarEdicao() {
+    const id = document.getElementById("edit-id").value;
+    
+    const novosDados = {
+        nome: document.getElementById("edit-nome").value,
+        lider: document.getElementById("edit-lider").value,
+        nome_mae: document.getElementById("edit-nomedamae").value,
+        data_nascimento: document.getElementById("edit-nascimento").value,
+        whatsapp: document.getElementById("edit-telefone").value,
+        escola: document.getElementById("edit-escola").value,
+        municipio: document.getElementById("edit-municipio").value    };
+
+    try {
+        const { error } = await supabaseClient.from('cadastros_votos').update(novosDados).eq('id', id);
+        if (error) {
+            alert("Erro ao salvar: " + error.message);
+            return;
+        }
+        await baixarDadosDaNuvem();
+        document.getElementById("modal-edicao").style.display = "none";
+        alert("Alterações salvas com sucesso!");
+    } catch (err) {
+        console.error("Erro inesperado:", err);
+    }
+}
+
+function abrirModalEdicao(id) {
+    const pessoa = listaCompletaBD.find(p => p.id === id);
+    if (!pessoa) return;
+
+    document.getElementById("edit-id").value = pessoa.id;
+    document.getElementById("edit-nome").value = pessoa.nome || "";
+    document.getElementById("edit-lider").value = pessoa.lider || "";
+    document.getElementById("edit-nomedamae").value = pessoa.nome_mae || pessoa.mae || "";
+    document.getElementById("edit-nascimento").value = pessoa.data_nascimento || pessoa.nascimento || ""; 
+    document.getElementById("edit-telefone").value = pessoa.whatsapp || "";
+    document.getElementById("edit-escola").value = pessoa.escola || "";
+    document.getElementById("edit-municipio").value = pessoa.municipio || "";
+
+    document.getElementById("modal-edicao").style.display = "flex";
+}
+function abrirConsultaTSE(nome) {
+    window.open("https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/", '_blank');
+}
+
+function exportarBairroPDF() {
+    const bairro = bairroAtivo;
+    const escolasBairro = dadosMunicipioAtivo[bairro];
+    if (!escolasBairro) { alert("Dados não encontrados."); return; }
+
+    const janelaImpressao = window.open('', '_blank');
+    let htmlContent = `<html><head><title>Relatório ${bairro}</title><style>body { font-family: Arial, sans-serif; padding: 20px; } table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; } th, td { border: 1px solid #000; padding: 4px; text-align: left; } th { background-color: #eee; } h1 { text-align: center; font-size: 18px; } h2 { font-size: 14px; }</style></head><body><h1>Relatório: ${bairro}</h1>`;
+
+    escolasBairro.forEach(escolaObj => {
+        const pessoas = listaCompletaBD.filter(item => String(item.escola).trim().toLowerCase() === String(escolaObj.nome).trim().toLowerCase() && (item.municipio || 'Macapá') === municipioAtivo);
+        if (pessoas.length > 0) {
+            htmlContent += `<h2>Escola: ${escolaObj.nome}</h2><table><thead><tr><th>Líder</th><th>Nome</th><th>Mãe</th><th>Data Nasc.</th><th>Tel</th></tr></thead><tbody>`;
+            pessoas.forEach(p => {
+                const dataNasc = p.data_nascimento || p.nascimento || '';
+                htmlContent += `<tr><td>${p.lider||''}</td><td>${p.nome||''}</td><td>${p.nome_mae||''}</td><td>${dataNasc}</td><td>${p.whatsapp||''}</td></tr>`;
+            });
+            htmlContent += `</tbody></table>`;
+        }
+    });
+
+    htmlContent += `</body></html>`;
+    janelaImpressao.document.write(htmlContent);
+    janelaImpressao.document.close();
+    setTimeout(() => { janelaImpressao.print(); }, 500);
+}
+
+function baixarPDFPesquisa() {
+    const inputPesquisaEl = document.getElementById("inputPesquisa");
+    
+    // TESTE 1: Verifica se o input foi encontrado
+    console.log("Elemento input encontrado?", inputPesquisaEl);
+    console.log("Texto digitado:", inputPesquisaEl ? inputPesquisaEl.value : "input nulo");
+
+    // TESTE 2: Verifica se o banco de dados local tem dados
+    console.log("Total de itens em listaCompletaBD:", typeof listaCompletaBD !== 'undefined' ? listaCompletaBD.length : "listaCompletaBD não existe!");
+
+    if (typeof listaCompletaBD === 'undefined' || listaCompletaBD.length === 0) {
+        alert("Atenção: A lista de dados (listaCompletaBD) está vazia ou não foi carregada.");
+        return;
+    }
+
+    const normalizar = texto => String(texto || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const termo = normalizar(inputPesquisaEl ? inputPesquisaEl.value : "");
+
+    const pessoas = listaCompletaBD.filter(item => {
+        if (!termo) return true;
+        const lider = normalizar(item.lider);
+        return lider.split(/[\s\/]+/).some(palavra => palavra.startsWith(termo));
+    });
+
+    console.log("Pessoas encontradas após o filtro:", pessoas.length);
+
+    if (pessoas.length === 0) { 
+        alert("Nenhum cadastro encontrado para: " + (inputPesquisaEl ? inputPesquisaEl.value : "")); 
+        return; 
+    }
+
+    const html = `<html><head><title>${schoolActive || "Relatório"}</title><style>body { font-family: Arial; padding: 20px; } h1 { text-align: center; margin-bottom: 5px; } h2 { text-align: center; margin-top: 0; font-weight: normal; } p { text-align: center; margin-bottom: 20px; } table { width: 100%; border-collapse: collapse; font-size: 11px; } th, td { border: 1px solid #000; padding: 6px; text-align: left; } th { background: #ddd; }</style></head><body onload="window.print(); setTimeout(() => window.close(), 500);"><h1>RELATÓRIO DA ESCOLA</h1><h2>${schoolActive || ""}</h2><p><strong>Filtro aplicado:</strong> "${inputPesquisaEl.value}" | <strong>Total de Cadastros:</strong> ${pessoas.length}</p><table><thead><tr><th>Líder</th><th>Nome</th><th>Nome da Mãe</th><th>Data Nasc.</th><th>Telefone</th><th>Escola</th></tr></thead><tbody>${pessoas.map(p => `<tr><td>${p.lider || ""}</td><td>${p.nome || ""}</td><td>${p.nome_mae || p.mae || ""}</td><td>${p.data_nascimento || p.nascimento || ""}</td><td>${p.whatsapp || ""}</td><td>${p.escola || ""}</td></tr>`).join("")}</tbody></table></body></html>`;
+
+    const janela = window.open("", "_blank");
+    if (!janela) { alert("Permita pop-ups para gerar o PDF."); return; }
+    janela.document.write(html);
+    janela.document.close();
+}
+
+/* ---- Navigation ---- */
+function goto(page){
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.toggle('active', i.dataset.page===page));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+page));
+  setTimeout(()=>{
+    if(page==='dashboard' && mapDash) mapDash.invalidateSize();
+    if(page==='mapa' && mapAtuacao) mapAtuacao.invalidateSize();
+    if(page==='locais') { renderizarGraficosDinamicos(); renderizarUltimos7Dias(); }
+    if(page==='aptos') renderizarGraficoBairrosEZonas();
+    if(page==='usuarios' && typeof renderUsers === 'function') renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+  },50);
+}
+document.querySelectorAll('.sb-item').forEach(el=>el.addEventListener('click',()=>goto(el.dataset.page)));
+document.querySelectorAll('[data-goto]').forEach(el=>el.addEventListener('click',()=>goto(el.dataset.goto)));
+
+/* ---- Maps (Leaflet + OpenStreetMap) ---- */
+const mapDash = L.map('map', { scrollWheelZoom: false }).setView([-0.02, -51.07], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(mapDash);
+
+const mapAtuacao = L.map('mapAtuacao', { scrollWheelZoom: false }).setView([-0.02, -51.07], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(mapAtuacao);
+
+function habilitarZoomComCtrl(mapInstance) {
+    const container = mapInstance.getContainer();
+    container.addEventListener('wheel', function (e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            mapInstance.scrollWheelZoom.enable();
+        } else {
+            mapInstance.scrollWheelZoom.disable();
+        }
+    }, { passive: false });
+    container.addEventListener('mouseleave', function () {
+        mapInstance.scrollWheelZoom.disable();
+    });
+}
+
+habilitarZoomComCtrl(mapDash);
+habilitarZoomComCtrl(mapAtuacao);
+
+let marcadoresLayerDash = L.layerGroup().addTo(mapDash);
+let marcadoresLayerAtuacao = L.layerGroup().addTo(mapAtuacao);
+
+function atualizarMapasComSupabase() {
+    marcadoresLayerDash.clearLayers();
+    marcadoresLayerAtuacao.clearLayers();
+
+    const agrupadoPorEscola = listaCompletaBD.reduce((acc, curr) => {
+        const escola = curr.escola ? String(curr.escola).trim().toUpperCase() : "NÃO INFORMADA";
+        if (!acc[escola]) {
+            acc[escola] = { count: 0, cadastros: [], municipio: curr.municipio || "Macapá" };
+        }
+        acc[escola].count += 1;
+        if (curr.nome) {
+            acc[escola].cadastros.push({ nome: curr.nome, lider: curr.lider || "Sem Líder" });
+        }
+        return acc;
+    }, {});
+
+    Object.keys(agrupadoPorEscola).forEach(nomeEscola => {
+        const dados = agrupadoPorEscola[nomeEscola];
+        const coord = coordenadasEscolas[nomeEscola];
+
+        if (coord) {
+            const tamanhoIcone = 25;
+            const iconeNumericoDash = L.divIcon({
+                className: 'custom-pin-icon',
+                html: `<div style="
+                    background-color: #0227a1;
+                    color: white;
+                    width: ${tamanhoIcone}px;
+                    height: ${tamanhoIcone}px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: 12px;
+                    border: 2px solid white;
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+                "><span style="transform: rotate(45deg);">${dados.count}</span></div>`,
+                iconSize: [tamanhoIcone, tamanhoIcone],
+                iconAnchor: [tamanhoIcone / 2, tamanhoIcone]
+            });
+
+            let listaNomesHtml = '';
+            if (dados.cadastros && dados.cadastros.length > 0) {
+                dados.cadastros.forEach(item => {
+                    listaNomesHtml += `<div class="popup-row">
+                        <span class="popup-row-name">👤 <b>${item.nome}</b></span>
+                        <span class="popup-lider-badge">Líder: ${item.lider}</span>
+                    </div>`;
+                });
+            } else {
+                listaNomesHtml = '<div class="popup-empty">Nenhum cadastro ativo</div>';
+            }
+
+            const conteudoPopup = `
+                <div style="min-width: 300px; max-width: 340px;">
+                    <div class="popup-escola">${nomeEscola}</div>
+                    <div class="popup-cidade">${(dados.municipio || 'Macapá').toUpperCase()}</div>
+
+                    <div class="popup-stats">
+                        <div class="popup-stat">
+                            <div class="popup-stat-value" style="color:var(--blue);">${dados.count}</div>
+                            <div class="popup-stat-label">Cadastros</div>
+                        </div>
+                        <div class="popup-stat">
+                            <div class="popup-stat-value" style="color:var(--green);">${dados.count}</div>
+                            <div class="popup-stat-label">Ativos</div>
+                        </div>
+                    </div>
+
+                    <div class="popup-section-title">Cadastros Ativos (${dados.count})</div>
+                    <div class="popup-list">
+                        ${listaNomesHtml}
+                    </div>
+                </div>
+            `;
+
+            const markerDash = L.marker([coord.lat, coord.lng], {
+                icon: iconeNumericoDash
+            }).bindPopup(conteudoPopup, { maxWidth: 360 });
+
+            marcadoresLayerDash.addLayer(markerDash);
+            
+            const markerAtuacao = L.marker([coord.lat, coord.lng], {
+                icon: iconeNumericoDash
+            }).bindPopup(conteudoPopup, { maxWidth: 360 });
+            marcadoresLayerAtuacao.addLayer(markerAtuacao);
+        }
+    });
+}
+
+/* ---- Charts Dinâmicos com dados do Supabase ---- */
+Chart.defaults.color = '#8593AC';
+Chart.defaults.font.family = "'Inter', sans-serif";
+const gridColor = 'rgba(255,255,255,0.06)';
+
+let barChart, doughnutChart;
+
+function renderizarGraficosDinamicos() {
+    const agrupadoLider = listaCompletaBD.reduce((acc, curr) => {
+        const lider = curr.lider || "Sem Líder";
+        acc[lider] = (acc[lider] || 0) + 1;
+        return acc;
+    }, {});
+
+    const agrupadoEscola = listaCompletaBD.reduce((acc, curr) => {
+        const escola = curr.escola || "Sem Escola";
+        acc[escola] = (acc[escola] || 0) + 1;
+        return acc;
+    }, {});
+
+    if (barChart) barChart.destroy();
+    if (doughnutChart) doughnutChart.destroy();
+
+    const ctxBar = document.getElementById('barChart');
+    if (!ctxBar) return;
+
+    const qtdLideres = Object.keys(agrupadoLider).length;
+    ctxBar.style.height = Math.max(220, qtdLideres * 28) + 'px';
+
+    barChart = new Chart(ctxBar.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: Object.keys(agrupadoLider),
+            datasets: [{ 
+                label: 'Cadastros por Líder', 
+                data: Object.values(agrupadoLider), 
+                backgroundColor: '#3B82F6', 
+                borderRadius: 6,
+                barThickness: 16
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { min: 0, max: 50, grid: { color: gridColor }, ticks: { color: '#8593AC', beginAtZero: true, stepSize: 5, maxRotation: 0, minRotation: 0, autoSkip: false } },
+                y: { grid: { display: false }, ticks: { color: '#8593AC', font: { weight: 'bold', size: 11 } } }
+            }
+        }
+    });
+
+    const ctxDough = document.getElementById('doughnutChart').getContext('2d');
+    doughnutChart = new Chart(ctxDough, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(agrupadoEscola),
+            datasets: [{ 
+                data: Object.values(agrupadoEscola), 
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            cutout: '65%'
+        }
+    });
+
+    const containerLegenda = document.getElementById('legenda-personalizada');
+    if (containerLegenda) {
+        containerLegenda.innerHTML = ""; 
+        Object.keys(agrupadoEscola).forEach((escola, index) => {
+            containerLegenda.innerHTML += `
+                <div style="display: flex; align-items: center; margin: 3px 6px;">
+                    <div style="width: 9px; height: 9px; background-color: ${['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'][index % 6]}; margin-right: 5px; border-radius: 2px;"></div>
+                    <span style="color: var(--muted); font-size: 11px;">${escola}</span>
+                </div>
+            `;
+        });
+    }
+
+    const elTotalEscolas = document.getElementById('total-escolas');
+    if (elTotalEscolas) {
+        elTotalEscolas.textContent = Object.keys(agrupadoEscola).length;
+    }
+
+    const elTotalLideres = document.getElementById('total-lideres');
+    if (elTotalLideres) {
+        elTotalLideres.textContent = Object.keys(agrupadoLider).length;
+    }
+}
+
+function renderizarUltimos7Dias() {
+    const container = document.getElementById('ultimos7dias-lista');
+    const sub = document.getElementById('ultimos7dias-sub');
+    if (!container) return;
+
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    const dias = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(hoje);
+        d.setDate(d.getDate() - i);
+        dias.push(d);
+    }
+
+    const contagens = dias.map(dia => {
+        return listaCompletaBD.filter(item => {
+            if (!item.created_at) return false;
+            const dataItem = new Date(item.created_at);
+            return dataItem.getFullYear() === dia.getFullYear() &&
+                   dataItem.getMonth() === dia.getMonth() &&
+                   dataItem.getDate() === dia.getDate();
+        }).length;
+    });
+
+    const totalSemana = contagens.reduce((a, b) => a + b, 0);
+    const maiorValor = Math.max(1, ...contagens);
+
+    sub.textContent = `${totalSemana} cadastro${totalSemana === 1 ? '' : 's'} nesta semana`;
+
+    container.innerHTML = dias.map((dia, i) => {
+        const label = dia.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }).replace('.', '.');
+        const valor = contagens[i];
+        const largura = (valor / maiorValor) * 100;
+        return `
+            <div class="d7-row">
+                <div class="d7-row-top">
+                    <span class="d7-row-label">${label}</span>
+                    <span class="d7-row-value">${valor}</span>
+                </div>
+                <div class="d7-row-track"><div class="d7-row-fill" style="width:${valor > 0 ? largura : 0}%;"></div></div>
+            </div>
+        `;
+    }).join('');
+}
+
+let chartAptos, chartRegiao;
+
+function renderizarGraficoBairrosEZonas() {
+    const ctxAptosEl = document.getElementById('chartAptos');
+    const ctxRegiaoEl = document.getElementById('chartRegiao');
+    if (!ctxAptosEl || !ctxRegiaoEl) return;
+
+    // Agrupa cadastros por bairro
+    const agrupadoBairro = listaCompletaBD.reduce((acc, curr) => {
+        const bairro = curr.bairro || "Sem Bairro";
+        acc[bairro] = (acc[bairro] || 0) + 1;
+        return acc;
+    }, {});
+
+    const elTotalBairros = document.getElementById('total-bairros');
+    if (elTotalBairros) elTotalBairros.textContent = Object.keys(agrupadoBairro).length;
+
+    const totalCadastros = Object.values(agrupadoBairro).reduce((a, b) => a + b, 0) || 1;
+
+    // Ordena bairros por quantidade (maior pro menor)
+    const bairrosOrdenados = Object.entries(agrupadoBairro).sort((a, b) => b[1] - a[1]);
+    const labelsBairro = bairrosOrdenados.map(([nome]) => nome);
+    const percentuaisBairro = bairrosOrdenados.map(([, qtd]) => Number(((qtd / totalCadastros) * 100).toFixed(1)));
+
+    if (chartAptos) chartAptos.destroy();
+    chartAptos = new Chart(ctxAptosEl, {
+        type: 'bar',
+        data: {
+            labels: labelsBairro,
+            datasets: [{ label: '% dos cadastros', data: percentuaisBairro, backgroundColor: '#3B82F6', borderRadius: 6 }]
+        },
+        options: {
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y}%` } }
+            },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: '#8593AC', autoSkip: false, maxRotation: 90, minRotation: 90, font: { size: 10 } } },
+                y: { grid: { color: gridColor }, ticks: { color: '#8593AC', callback: (v) => v + '%' } }
+            }
+        }
+    });
+
+    // Classifica cada bairro em Zona Sul / Zona Norte usando os mapas já existentes
+    let totalZonaSul = 0, totalZonaNorte = 0, totalSemZona = 0;
+    Object.entries(agrupadoBairro).forEach(([bairro, qtd]) => {
+        if (zonaSul[bairro]) totalZonaSul += qtd;
+        else if (zonaNorte[bairro]) totalZonaNorte += qtd;
+        else totalSemZona += qtd;
+    });
+
+    const labelsZona = ['Zona Sul', 'Zona Norte'];
+    const valoresZona = [
+        Number(((totalZonaSul / totalCadastros) * 100).toFixed(1)),
+        Number(((totalZonaNorte / totalCadastros) * 100).toFixed(1))
+    ];
+    if (totalSemZona > 0) {
+        labelsZona.push('Não classificado');
+        valoresZona.push(Number(((totalSemZona / totalCadastros) * 100).toFixed(1)));
+    }
+
+    if (chartRegiao) chartRegiao.destroy();
+    chartRegiao = new Chart(ctxRegiaoEl, {
+        type: 'pie',
+        data: {
+            labels: labelsZona,
+            datasets: [{ data: valoresZona, backgroundColor: ['#3B82F6', '#22C77A', '#8593AC'] }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 }, color: '#8593AC' } },
+                tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } }
+            }
+        }
+    });
+}
+
+/* ---- Users list ---- */
+function initials(name){ return name.trim().split(' ')[0][0].toUpperCase(); }
+
+/* ---- Líderes oficiais (tabela "lideres" no Supabase, com telefone p/ login) ---- */
+let listaLideresBD = [];
+
+async function baixarLideresDaNuvem() {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient.from('lideres').select('*');
+    if (error) {
+        console.error("Erro ao carregar líderes (a tabela 'lideres' existe no Supabase?):", error.message);
+        listaLideresBD = [];
+        return;
+    }
+    listaLideresBD = data || [];
+}
+
+function normalizarTexto(str) {
+    return String(str || '').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function ehLiderOficial(nome) {
+    return listaLideresBD.some(l => normalizarTexto(l.nome) === normalizarTexto(nome));
+}
+
+async function tornarLider(nome, event) {
+    if (event) event.stopPropagation();
+    if (ehLiderOficial(nome)) return;
+
+    const telefoneDigitado = prompt(`Telefone de "${nome}" (com DDD, será usado como login dele no formulário de cadastro):`);
+    if (telefoneDigitado === null) return; // cancelou
+
+    const digitos = telefoneDigitado.replace(/\D/g, '');
+    if (digitos.length < 10 || digitos.length > 11) {
+        alert("Telefone inválido. Digite com DDD, ex: 96991664671");
+        return;
+    }
+
+    const { error } = await supabaseClient.from('lideres').upsert(
+        { nome: nome, telefone: digitos },
+        { onConflict: 'telefone' }
+    );
+
+    if (error) {
+        alert("Erro ao tornar líder: " + error.message);
+        return;
+    }
+
+    await baixarLideresDaNuvem();
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+}
+
+async function removerLider(nome, event) {
+    if (event) event.stopPropagation();
+    if (!confirm(`Remover "${nome}" da lista de líderes? Ele não vai mais conseguir logar no formulário de cadastro.`)) return;
+
+    const lider = listaLideresBD.find(l => normalizarTexto(l.nome) === normalizarTexto(nome));
+    if (!lider) return;
+
+    const { error } = await supabaseClient.from('lideres').delete().eq('id', lider.id);
+    if (error) {
+        alert("Erro ao remover líder: " + error.message);
+        return;
+    }
+
+    await baixarLideresDaNuvem();
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+}
+
+/* ---- Editar nome de um líder (atualiza a tabela 'lideres' e todos os cadastros vinculados a ele) ---- */
+async function editarLider(nomeAtual, event) {
+    if (event) event.stopPropagation();
+
+    const novoNome = prompt("Editar nome do líder:", nomeAtual);
+    if (novoNome === null) return; // cancelou
+    const nomeNovo = novoNome.trim();
+    if (!nomeNovo || nomeNovo === nomeAtual) return;
+
+    // Se for líder oficial (tem login), atualiza também a tabela 'lideres'
+    const liderOficial = listaLideresBD.find(l => normalizarTexto(l.nome) === normalizarTexto(nomeAtual));
+    if (liderOficial) {
+        const { error } = await supabaseClient.from('lideres').update({ nome: nomeNovo }).eq('id', liderOficial.id);
+        if (error) {
+            alert("Erro ao atualizar líder: " + error.message);
+            return;
+        }
+    }
+
+    // Atualiza o nome em todos os cadastros já vinculados a esse líder
+    const { error: errCadastros } = await supabaseClient
+        .from('cadastros_votos')
+        .update({ lider: nomeNovo })
+        .eq('lider', nomeAtual);
+    if (errCadastros) {
+        alert("Erro ao atualizar cadastros vinculados: " + errCadastros.message);
+        return;
+    }
+
+    await baixarDadosDaNuvem();
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+}
+
+/* ---- Excluir um líder por completo (remove o login oficial e desvincula os cadastros dele) ---- */
+async function excluirLider(nome, event) {
+    if (event) event.stopPropagation();
+
+    if (!confirm(`Excluir "${nome}" como líder?\n\nOs cadastros feitos por ele(a) NÃO serão apagados — só deixarão de estar vinculados a um líder. Essa ação não pode ser desfeita.\n\nDeseja continuar?`)) return;
+
+    const liderOficial = listaLideresBD.find(l => normalizarTexto(l.nome) === normalizarTexto(nome));
+    if (liderOficial) {
+        const { error } = await supabaseClient.from('lideres').delete().eq('id', liderOficial.id);
+        if (error) {
+            alert("Erro ao excluir líder: " + error.message);
+            return;
+        }
+    }
+
+    const { error: errCadastros } = await supabaseClient
+        .from('cadastros_votos')
+        .update({ lider: null })
+        .eq('lider', nome);
+    if (errCadastros) {
+        alert("Erro ao desvincular cadastros: " + errCadastros.message);
+        return;
+    }
+
+    await baixarDadosDaNuvem();
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+}
+
+/* ---- Cadastrar novo líder direto (sem precisar ter cadastros ainda) ---- */
+function abrirModalCadastrarLider() {
+    document.getElementById('form-cadastrar-lider').reset();
+    const erro = document.getElementById('cadastrar-lider-erro');
+    erro.style.display = 'none';
+    erro.textContent = '';
+    document.getElementById('modal-cadastrar-lider').style.display = 'flex';
+    document.getElementById('novo-lider-nome').focus();
+}
+
+function fecharModalCadastrarLider() {
+    document.getElementById('modal-cadastrar-lider').style.display = 'none';
+}
+
+document.getElementById('novo-lider-telefone').addEventListener('input', function (e) {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length > 11) v = v.slice(0, 11);
+    if (v.length > 6) e.target.value = v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    else if (v.length > 2) e.target.value = v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+    else if (v.length > 0) e.target.value = v.replace(/(\d{0,2})/, '($1');
+});
+
+document.getElementById('form-cadastrar-lider').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const erro = document.getElementById('cadastrar-lider-erro');
+    erro.style.display = 'none';
+
+    const nome = document.getElementById('novo-lider-nome').value.trim();
+    const digitos = document.getElementById('novo-lider-telefone').value.replace(/\D/g, '');
+
+    if (digitos.length < 10 || digitos.length > 11) {
+        erro.textContent = 'Telefone inválido. Digite com DDD, ex: (96) 99166-4671';
+        erro.style.display = 'block';
+        return;
+    }
+
+    const btn = document.getElementById('btn-salvar-novo-lider');
+    btn.textContent = 'Salvando...';
+    btn.disabled = true;
+
+    const { error } = await supabaseClient.from('lideres').upsert(
+        { nome: nome, telefone: digitos },
+        { onConflict: 'telefone' }
+    );
+
+    btn.textContent = 'Salvar Líder';
+    btn.disabled = false;
+
+    if (error) {
+        erro.textContent = error.message.includes('duplicate') || error.message.includes('unique')
+            ? 'Esse telefone já está cadastrado para outro líder.'
+            : 'Erro ao salvar: ' + error.message;
+        erro.style.display = 'block';
+        return;
+    }
+
+    await baixarLideresDaNuvem();
+    fecharModalCadastrarLider();
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+});
+
+function agruparLideres() {
+    const agrupado = listaCompletaBD.reduce((acc, curr) => {
+        const nomeLider = curr.lider ? String(curr.lider).trim() : null;
+        if (!nomeLider) return acc;
+        if (!acc[nomeLider]) acc[nomeLider] = { name: nomeLider, count: 0, bairros: new Set() };
+        acc[nomeLider].count += 1;
+        if (curr.bairro) acc[nomeLider].bairros.add(String(curr.bairro).trim());
+        return acc;
+    }, {});
+
+    // Inclui também líderes já cadastrados (com login) que ainda não têm nenhum cadastro
+    listaLideresBD.forEach(l => {
+        const nomeLider = String(l.nome || '').trim();
+        if (!nomeLider) return;
+        const jaExiste = Object.keys(agrupado).some(k => normalizarTexto(k) === normalizarTexto(nomeLider));
+        if (!jaExiste) {
+            agrupado[nomeLider] = { name: nomeLider, count: 0, bairros: new Set() };
+        }
+    });
+
+    return Object.values(agrupado).sort((a, b) => b.count - a.count);
+}
+
+function renderUsers(filtro) {
+  const wrap = document.getElementById('userList');
+  if (!wrap) return;
+
+  const termo = (filtro || '').trim().toLowerCase();
+  let lideres = agruparLideres();
+  if (termo !== '') {
+    lideres = lideres.filter(u => u.name.toLowerCase().includes(termo));
+  }
+
+  const elCount = document.getElementById('userCount');
+  if (elCount) {
+    elCount.textContent = lideres.length + (lideres.length === 1 ? ' líder cadastrado' : ' líderes cadastrados');
+  }
+
+  wrap.innerHTML = lideres.map(u => {
+    const nomeSeguro = u.name.replace(/'/g, "\\'");
+    const statusHtml = ehLiderOficial(u.name)
+      ? `<span class="badge-leader" onclick="removerLider('${nomeSeguro}', event)" title="Clique para remover status de líder">Líder</span>`
+      : `<button class="btn-tornar-lider" onclick="tornarLider('${nomeSeguro}', event)">Tornar Líder</button>`;
+    return `
+    <div class="user-row" onclick="abrirModalLider('${nomeSeguro}')">
+      <div class="user-avatar">${initials(u.name)}</div>
+      <div class="user-info">
+        <div class="user-name-row">
+          <span class="user-name">${u.name}</span>
+          <span class="badge-count">+${u.count}</span>
+        </div>
+        <div class="user-meta">${u.count} cadastro${u.count === 1 ? '' : 's'}${u.bairros.size ? ' · ' + [...u.bairros].join(', ') : ''}</div>
+      </div>
+      <div class="user-corner">
+        ${statusHtml}
+        <div class="user-row-actions">
+          <button class="icon-btn-edit" onclick="editarLider('${nomeSeguro}', event)" title="Editar nome do líder">✏️</button>
+          <button class="icon-btn-delete" onclick="excluirLider('${nomeSeguro}', event)" title="Excluir líder">🗑️</button>
+        </div>
+      </div>
+    </div>
+  `;
+  }).join('') || '<p style="color:var(--muted);font-size:13px;padding:12px 0;">Nenhum líder encontrado.</p>';
+}
+
+function abrirModalLider(nomeLider) {
+    const cadastrados = listaCompletaBD.filter(item => item.lider && String(item.lider).trim() === nomeLider);
+
+    document.getElementById('modal-lider-nome').textContent = nomeLider;
+    document.getElementById('modal-lider-sub').textContent = `${cadastrados.length} cadastro${cadastrados.length === 1 ? '' : 's'}`;
+
+    const lista = document.getElementById('modal-lider-lista');
+    lista.innerHTML = cadastrados.length ? cadastrados.map(p => `
+        <div class="lider-cadastro-row">
+            <div>
+                <div class="lider-cadastro-nome">${p.nome || 'Sem nome'}</div>
+                <div class="lider-cadastro-meta">${[p.escola, p.bairro].filter(Boolean).join(' · ') || 'Sem escola/bairro'}</div>
+            </div>
+            <div class="lider-cadastro-meta">${p.whatsapp || ''}</div>
+        </div>
+    `).join('') : '<p style="color:var(--muted);font-size:13px;padding:12px 0;">Nenhum cadastro encontrado.</p>';
+
+    document.getElementById('modal-lider').style.display = 'flex';
+}
+const userSearchEl = document.getElementById('userSearch');
+if (userSearchEl) userSearchEl.addEventListener('input', e=>renderUsers(e.target.value));
+renderUsers('');
+
+function abrirEdicaoMeta() {
+    document.getElementById("meta-valor-display").style.display = "none";
+    document.getElementById("meta-texto-acao").style.display = "none";
+    document.getElementById("meta-box-edicao").style.display = "block";
+}
+
+function fecharEdicaoMeta(event) {
+    event.stopPropagation();
+    document.getElementById("meta-valor-display").style.display = "block";
+    document.getElementById("meta-texto-acao").style.display = "block";
+    document.getElementById("meta-box-edicao").style.display = "none";
+}
+
+async function salvarMeta() {
+    const novoValor = document.getElementById("valor-meta").value;
+
+    if (supabaseClient) {
+        const { error } = await supabaseClient
+            .from('configuracoes')
+            .upsert({ chave: 'meta_cadastros', valor: novoValor }, { onConflict: 'chave' });
+        if (error) {
+            alert("Erro ao salvar a meta: " + error.message);
+            return;
+        }
+    }
+
+    document.getElementById("meta-valor-display").textContent = novoValor;
+    
+    document.getElementById("meta-valor-display").style.display = "block";
+    document.getElementById("meta-texto-acao").style.display = "block";
+    document.getElementById("meta-box-edicao").style.display = "none";
+    
+    if (typeof baixarDadosDaNuvem === "function") {
+        baixarDadosDaNuvem();
+    }
+}
+</script>
+</body>
+</html>
