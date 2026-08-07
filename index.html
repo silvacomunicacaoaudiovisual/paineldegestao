@@ -1808,18 +1808,18 @@ function fazerLogin(event) {
         return;
     }
 
-    localStorage.setItem('e4-logado', usuario);
+    sessionStorage.setItem('e4-logado', usuario);
     mostrarPainel(usuario);
 }
 
 function fazerLogout() {
-    localStorage.removeItem('e4-logado');
+    sessionStorage.removeItem('e4-logado');
     mostrarTelaLogin();
     document.getElementById('login-form').reset();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const usuarioSalvo = localStorage.getItem('e4-logado');
+    const usuarioSalvo = sessionStorage.getItem('e4-logado');
     if (usuarioSalvo) {
         mostrarPainel(usuarioSalvo);
     } else {
