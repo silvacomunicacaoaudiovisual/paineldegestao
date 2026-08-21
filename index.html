@@ -269,25 +269,10 @@
   }
   .btn-primary:hover{background:#2850C4;}
 
-  .sidebar-overlay{display:none;}
-  .mobile-menu-btn{display:none;}
-
   @media (max-width:900px){
-    .sidebar{position:fixed;left:-230px;top:0;bottom:0;transition:left .2s;z-index:40;}
-    .sidebar.open{left:0;box-shadow:2px 0 24px rgba(0,0,0,0.5);}
+    .sidebar{position:fixed;left:-230px;transition:left .15s;z-index:40;}
     .stat-grid{grid-template-columns:repeat(2,1fr);}
     .grid-2{grid-template-columns:1fr;}
-
-    .sidebar-overlay.open{
-      display:block;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:39;
-    }
-
-    .mobile-menu-btn{
-      display:flex;align-items:center;justify-content:center;
-      width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
-      background:var(--card);color:var(--ink);cursor:pointer;margin-right:10px;
-      flex-shrink:0;
-    }
   }
 
 
@@ -319,12 +304,10 @@
 
 <div class="shell" style="display:none;">
 
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="fecharSidebar()"></div>
-
-  <div class="sidebar" id="sidebar">
+  <div class="sidebar">
     <div class="sb-brand">
       <div class="sb-logo">
-        <img src="logo.png" width="33" height="33" style="pointer-events:none;border-radius:6px;object-fit:cover;" alt="Logo">
+        <object data="logo.svg" type="image/svg+xml" width="33" height="33" style="pointer-events: none;"></object>
       </div>
       <div>
         <h1>E4 PREMIUM</h1>
@@ -388,12 +371,7 @@
         <div class="page-head-row">
           <div>
             <div class="eyebrow" id="dateNow"></div>
-            <h2 class="page-title">
-              <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="abrirSidebar()" title="Abrir menu" aria-label="Abrir menu">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-              </button>
-              Painel E4 Premium
-            </h2>
+            <h2 class="page-title">Painel E4 Premium</h2>
             <p class="page-sub">Visão geral da operação e indicadores</p>
           </div>
         </div>
@@ -469,8 +447,10 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
           <div class="bg-slate-900 p-5 rounded-xl border border-slate-800 shadow-md" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px;">
               <h3 class="font-bold mb-4 text-slate-300" style="font-size: 14px; margin-bottom: 16px;">Soma de QUANTIDADE por LIDER</h3>
-              <div id="bar-chart-wrapper" style="position: relative; max-height: 560px; overflow-y: auto;">
-                  <canvas id="barChart"></canvas>
+              <div id="bar-chart-wrapper" style="position: relative; max-height: 560px; overflow-y: auto; overflow-x: hidden;">
+                  <div id="bar-chart-inner" style="position: relative; width: 100%;">
+                      <canvas id="barChart"></canvas>
+                  </div>
               </div>
           </div>
           
@@ -614,6 +594,13 @@
             <button onclick="abrirModalCadastrarLider()" class="btn-primary" style="padding: 8px 14px; font-size: 13px; white-space:nowrap;">+ Cadastrar Líder</button>
           </div>
         </div>
+        <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-top:12px;" id="abas-regiao-usuarios">
+          <button onclick="filtrarRegiaoUsuarios('todos')" class="pill regiao-usuario-btn" data-regiao="todos" style="background:var(--blue); color:#fff; border:1px solid var(--blue); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Todos</button>
+          <button onclick="filtrarRegiaoUsuarios('sul')" class="pill regiao-usuario-btn" data-regiao="sul" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">MCP Sul</button>
+          <button onclick="filtrarRegiaoUsuarios('norte')" class="pill regiao-usuario-btn" data-regiao="norte" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">MCP Norte</button>
+          <button onclick="filtrarRegiaoUsuarios('laranjal')" class="pill regiao-usuario-btn" data-regiao="laranjal" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Laranjal</button>
+          <button onclick="filtrarRegiaoUsuarios('vitoria')" class="pill regiao-usuario-btn" data-regiao="vitoria" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Vitória</button>
+        </div>
         <div class="card" style="padding:8px 12px;margin-top:14px;"><div id="userList"></div></div>
       </div>
 
@@ -722,8 +709,17 @@
       <input id="novo-lider-nome" type="text" placeholder="Nome completo" required style="width:100%; margin-bottom:12px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit;">
 
       <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Telefone (com DDD) — será o login dele</label>
-      <input id="novo-lider-telefone" type="text" placeholder="(96) 99999-9999" maxlength="15" required style="width:100%; margin-bottom:4px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit;">
-      <p style="font-size:11px; color:var(--muted); margin:0 0 14px 0;">A senha dele no formulário de cadastro serão os 4 últimos dígitos desse telefone.</p>
+      <input id="novo-lider-telefone" type="text" placeholder="(96) 99999-9999" maxlength="15" required style="width:100%; margin-bottom:12px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit;">
+      <p style="font-size:11px; color:var(--muted); margin:-8px 0 14px 0;">A senha dele no formulário de cadastro serão os 4 últimos dígitos desse telefone.</p>
+
+      <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:4px;">Região</label>
+      <select id="novo-lider-regiao" required style="width:100%; margin-bottom:14px; background:var(--card-2); border:1px solid var(--border); border-radius:8px; color:#fff; padding:10px; font-size:13px; font-family:inherit;">
+        <option value="" disabled selected>Selecione a região</option>
+        <option value="sul">MCP Sul</option>
+        <option value="norte">MCP Norte</option>
+        <option value="laranjal">Laranjal</option>
+        <option value="vitoria">Vitória</option>
+      </select>
 
       <p id="cadastrar-lider-erro" style="display:none; color:#f87171; font-size:12px; margin-bottom:10px;"></p>
 
@@ -748,21 +744,21 @@ let listaCompletaBD = [];
 
 const zonaSul = {
     "UNIVERSIDADE": [{ nome: "NEUZONA", votos: 1903 }, { nome: "UNIFAP", votos: 6251 }],
-    "ZERÃO": [{ nome: "ANA MARIA DA SILVA", votos: 1465 }, { nome: "ANTÔNIO MESSIAS", votos: 3514 }, { nome: "NANCI NINA COSTA", votos: 4300 }, { nome: "ANTÔNIO CASTRO", votos: 3945 }],
+    "ZERÃO": [{ nome: "ANA MARIA DA SILVA", votos: 1465 }, { nome: "ANTÔNIO MESSIAS", votos: 3514 }, { nome: "NANCI NINA COSTA", votos: 4300 }, { nome: "ANTÔNIO CASTRO", votos: 3945 }, { nome: "E. MARIA BERNADETE", votos: 0 }],
     "NOVO BURITIZAL": [{ nome: "ELITA NUNES MELO", votos: 884 }, { nome: "RAIMUNDO ALENCAR", votos: 1024 }, { nome: "ANA LUIZA DE SOUZA", votos: 899 }],
     "BURITIZAL": [{ nome: "EUNICE PICANÇO", votos: 1802 }, { nome: "CARMELITA DO CARMO", votos: 3100 }, { nome: "SEBASTIANA LENIR", votos: 4351 }, { nome: "MÁRIO QUIRINO", votos: 4949 }, { nome: "COELHO NETO", votos: 2451 }, { nome: "CECÍLIA PINTO", votos: 3992 }, { nome: "RORAIMA", votos: 1952 }, { nome: "ARACY MONT'ALVERNE", votos: 1904 }, { nome: "CEPA - CENTRO E. DO AP", votos: 2317 }, { nome: "GONÇALVES DIAS", votos: 3689 }],
     "CUBA DE ASFALTO": [{ nome: "REINALDO DAMASCENO", votos: 3445 }],
     "MUCA": [{ nome: "PARAÍSO DAS ACÁCIAS", votos: 1558 }, { nome: "LAURO CHAVES", votos: 3209 }, { nome: "ESFORÇO POPULAR", votos: 1743 }],
     "PEDRINHAS": [{ nome: "MARIA DE NAZARÉ", votos: 3640 }, { nome: "RAIMUNDA VIRGOLINO", votos: 3912 }],
     "JARDIM EQUATORIAL": [{ nome: "WILSON MALCHER", votos: 5046 }],
-    "BEIROL": [{ nome: "ZOLITO D. JESUS NUNES", votos: 4324 }, { nome: "PROF. ROBERTO - CENAP", votos: 2271 }],
+    "BEIROL": [{ nome: "ZOLITO D. JESUS NUNES", votos: 4324 }, { nome: "PROF. ROBERTO - CENAP", votos: 2271 }, { nome: "SESC", votos: 0 }],
     "NOVA ESPERANÇA": [{ nome: "JOSEFA JUCILEIDE", votos: 4073 }],
     "CONGÓS": [{ nome: "IRINEU DA GAMA PAZ", votos: 4541 }, { nome: "NELITA ROCHA", votos: 3021 }, { nome: "BENIGNA MOREIRA", votos: 3248 }],
     "MARABAIXO": [{ nome: "RAIMUNDA GUEDES", votos: 2471 }, { nome: "NILTON BALIEIRO", votos: 4128 }, { nome: "IRMÃ CARMELA B.", votos: 3347 }],
     "CABRALZINHO": [{ nome: "SEST/SENAT", votos: 578 }, { nome: "MARIA DO SOCORRO A.", votos: 3308 }],
     "SANTA INÊS": [{ nome: "ANTÔNIO BARBOSA", votos: 1170 }, { nome: "SANTA INÊS", votos: 3525 }],
     "TREM": [{ nome: "SANTINA RIOLI", votos: 4287 }, { nome: "AMAPÁ", votos: 3015 }, { nome: "ALEXANDRE V. TAVARES", votos: 4507 }, { nome: "HILDEMAR MAIA", votos: 1991 }, { nome: "JOSÉ FIRMO(CASTELO BRANCO)", votos: 2622 }],
-    "CENTRO": [{ nome: "GRAZIELA REIS", votos: 2062 }, { nome: "GABRIEL DE ALMEIDA C.", votos: 2695 }, { nome: "PROFESSORA GUITA", votos: 532 }, { nome: "ANTÔNIO CORDEIRO P.", votos: 1446 }, { nome: "GUANABARA", votos: 1541 }, { nome: "UEAP", votos: 2287 }],
+    "CENTRO": [{ nome: "GRAZIELA REIS", votos: 2062 }, { nome: "GABRIEL DE ALMEIDA C.", votos: 2695 }, { nome: "PROFESSORA GUITA", votos: 532 }, { nome: "ANTÔNIO CORDEIRO P.", votos: 1446 }, { nome: "GUANABARA", votos: 1541 }, { nome: "UEAP", votos: 2287 },{ nome: "COLEGIO AMAPAENSE", votos: 0 }],
     "SANTA RITA": [{ nome: "LUCIMAR DEL CASTILHO", votos: 615 }, { nome: "TIRADENTES", votos: 4170 }, { nome: "MEU PÉ DE LARANJA", votos: 1245 }, { nome: "PREDICANDA LOPES", votos: 2804 }, { nome: "JOSÉ DE ANCHIETA", votos: 3452 }, { nome: "DOM ARISTIDES", votos: 2412 }, { nome: "COARACY NUNES", votos: 3385 }, { nome: "ARACY NASCIMENTO", votos: 1745 }],
     "FAZENDINHA": [{ nome: "JOSÉ DO PATROCÍNIO", votos: 3092 }, { nome: "CAETANO DIAS TOMÁS", votos: 2251 }, { nome: "PROFª JACINTA MARIA", votos: 1469 }, { nome: "CACILDA FERREIRA V.", votos: 1531 }, { nome: "IVANHOÉ GONÇALVES", votos: 392 }, { nome: "MARIA ANGÉLICA P.", votos: 121 }],
     "IGARAPÉ DA FORTALEZA": [{ nome: "PROFª MARGARIDA R.", votos: 1043 }],
@@ -786,9 +782,62 @@ const zonaNorte = {
     "PACOVAL": [{ nome: "EUNICE DAS CHAGAS", votos: 2098 }, { nome: "JOSÉ DUARTE DE A.", votos: 3254 }, { nome: "DEUSOLINA SALES", votos: 4044 }, { nome: "MUNDO DA CRIANÇA", votos: 2235 }],
     "LAGUINHO": [{ nome: "AZEVEDO COSTA", votos: 3842 }, { nome: "EDGAR LINO", votos: 2695 }, { nome: "AUGUSTO DOS ANJOS", votos: 3084 }],
     "JESUS DE NAZARÉ": [{ nome: "RONDÔNIA", votos: 2242 }, { nome: "CASTRO ALVES", votos: 2091 }, { nome: "ESCOLA JESUS DE NAZARÉ", votos: 2623 }],
-    "PERPÉTUO SOCORRO": [{ nome: "JOSÉ DE ALENCAR", votos: 3144 }, { nome: "DEUZUITE CAVALCANTE", votos: 3098 }, { nome: "SANTUÁRIO PERPÉTUO", votos: 1465 }, { nome: "ARAÇARY CORRÊA", votos: 2846 }, { nome: "MARIA IVONE DE M.", votos: 4287 }, { nome: "MARIO ANDREAZZA", votos: 3238 }, { nome: "MAESTRO MIGUEL A.", votos: 1919 }]
-};
+    "PERPÉTUO SOCORRO": [{ nome: "JOSÉ DE ALENCAR", votos: 3144 }, { nome: "DEUZUITE CAVALCANTE", votos: 3098 }, { nome: "SANTUÁRIO PERPÉTUO", votos: 1465 }, { nome: "ARAÇARY CORRÊA", votos: 2846 }, { nome: "MARIA IVONE DE M.", votos: 4287 }, { nome: "MARIO ANDREAZZA", votos: 3238 }, { nome: "MAESTRO MIGUEL A.", votos: 1919 }],
+    "CURIAU": [{ nome: "EPG JOSÉ BONIFÁCIO", votos: 1076 }]};
 
+/* ---- Bairros Fora da Sede (Zona Rural de Macapá) ---- */
+const zonaRuralMacapa = {
+    "REGIÃO RURAL ESTRADA": [
+        { nome: "E.P.G. TESSALÔNICA", votos: 351 },
+        { nome: "E.E. GENERAL CARROMBERT PEREIRA DA COSTA", votos: 324 },
+        { nome: "E.E. NOSSA SENHORA DE NAZARÉ", votos: 898 },
+        { nome: "E.E. ANTÔNIO FIGUEIREDO DA SILVA", votos: 363 },
+        { nome: "E.E.E.F. ARURI", votos: 251 },
+        { nome: "E.P.G. CARAPANATUBA", votos: 495 },
+        { nome: "E.E. JOÃO MACIEL", votos: 432 },
+        { nome: "E.E. PONTA GROSSA DO PIRIRIM", votos: 222 },
+        { nome: "E.E. SÃO SEBASTIÃO DA BOA VISTA", votos: 192 },
+        { nome: "E.E.E.F. HELENISE WALMIRA", votos: 795 },
+        { nome: "E.M.E.F. CAMPINA GRANDE", votos: 178 },
+        { nome: "E.P.G. RAIMUNDO PEREIRA", votos: 752 },
+        { nome: "E.E. SÃO PEDRO DO CARANÃ", votos: 125 },
+        { nome: "E.E. RAIMUNDO PEREIRA", votos: 0 },
+        { nome: "E.M. JOÃO ROLINDO DO CARMO", votos: 109 }
+    ],
+    "REGIÃO DO BAILIQUE": [
+        { nome: "E.P.G. MARIA JOSÉ CAMPELO DA SILVA", votos: 421 },
+        { nome: "E.E. BENTO TOLOSA", votos: 312 },
+        { nome: "E.E. FRANCO GRANDE", votos: 258 },
+        { nome: "E.E. PROFª NAIR CORDEIRO MARQUES", votos: 312 },
+        { nome: "E.E. ROSA DE SHARON", votos: 899 },
+        { nome: "E.E. CLÁUDIO DOS SANTOS BARBOSA (ESCOLA BOSQUE)", votos: 1887 },
+        { nome: "E.E. IGARAPÉ DA TERRA GRANDE", votos: 349 },
+        { nome: "E.E. ITAMATATUBA", votos: 433 },
+        { nome: "E.E. MANOEL PEREIRA HERCULANO", votos: 198 }
+    ],
+    "REGIÃO DO PACUÍ": [
+        { nome: "E.P.G. SÃO JOAQUIM DO PACUÍ", votos: 935 },
+        { nome: "E.P.G. JULIO GONÇALVES DA COSTA", votos: 689 },
+        { nome: "E.M.P.G. IRIDIO ROCHA", votos: 712 },
+        { nome: "E.P.G. SÃO TOMÉ DO PACUÍ", votos: 291 },
+        { nome: "E.E. OLENDINA FERREIRA", votos: 59 },
+        { nome: "E.P.G. SEBASTIÃO CORDEIRO SENA", votos: 495 },
+        { nome: "E.M. BENEDITA T. AVARES", votos: 340 },
+        { nome: "E.E. ANDRÉ NEVES", votos: 134 },
+        { nome: "E.E. JOSÉ OLIVEIRA COELHO", votos: 247 }
+    ],
+    "REGIÃO DA PEDREIRA": [
+        { nome: "E.P.G. DANIEL DE CARVALHO", votos: 688 },
+        { nome: "E.E. ANTONIO BRAULIO DE SOUSA", votos: 143 },
+        { nome: "E.E. NAZARÉ DA PEDREIRA", votos: 223 },
+        { nome: "E.E. SÃO RAIMUNDO DO PARAÍSO", votos: 287 },
+        { nome: "E.P.G. PEDRO ALCÂNTARA", votos: 703 },
+        { nome: "ESCOLA QUILOMBOLA NESTOR BARBOSA", votos: 257 },
+        { nome: "E.P.G. TEIXEIRA DE FREITAS", votos: 155 },
+        { nome: "E.M.E.F. VELHO CHICO", votos: 435 },
+        { nome: "E.E. JOAQUIM MANOEL DE JESUS PICANÇO", votos: 121 }
+    ]
+};
 /* ---- Dados dos demais municípios do Amapá (bairros/localidades e escolas) ---- */
 const itaubal = {
     "CENTRO": [
@@ -944,7 +993,8 @@ const portoGrande = {
         { nome: "E.E. MATAPI II", votos: 1206 }
     ],
      "CUPIXI": [
-        { nome: "E.M. CUPIXI", votos: 891 }
+        { nome: "E.M. CUPIXI", votos: 891 },
+        { nome: "E. FLORENÇA TORRES DE ARAUJO", votos: 0 }
     ],
     "NOVA ESPERANÇA": [
         { nome: "E.M. AMÉLIA BITENCOURT", votos: 787 }
@@ -1118,6 +1168,10 @@ const laranjalDoJari = {
     "VILA ÁGUA BRANCA": [
         { nome: "E.P.G. ÁGUA BRANCA DO CAJARI", votos: 755 }
     ],
+
+    "URBANA": [
+        { nome: "CENTRO MUNICIPAL DE ENSINO FUNDAMENTAL (CMEF)", votos: 0 }
+    ],
     "ASSENTA NAZARÉ": [
         { nome: "E.M. CONCEIÇÃO DO MURIACÁ", votos: 715 }
     ],
@@ -1181,7 +1235,8 @@ const santana = {
         { nome: "E.E. ANTONIO JANUARIO PEREIRA", votos: 2816 },
         { nome: "E.M. GENTILA ANSELMO NOBRE", votos: 891 },
         { nome: "E.E. FONTE NOVA", votos: 0 },
-        { nome: "E.M. PADRE FÚLVIO GUILLIANO", votos: 0 }
+        { nome: "E.M. PADRE FÚLVIO GUILLIANO", votos: 0 },
+        { nome: "E.E. PROF RODOVAL BORGES SILVA", votos: 0 }
     ],
     "I. DO LAGO": [
         { nome: "E.E. BELMIRO MACEDO MEDINA", votos: 560 },
@@ -1752,7 +1807,7 @@ const municipiosData = {
     "Ferreira Gomes": ferreiraGomes,
     "Itaubal": itaubal,
     "Laranjal do Jari": laranjalDoJari,
-    "Macapá": { ...zonaSul, ...zonaNorte },
+    "Macapá": { ...zonaSul, ...zonaNorte, ...zonaRuralMacapa },
     "Mazagão": mazagao,
     "Oiapoque": oiapoque,
     "Pedra Branca do Amapari": pedraBrancaDoAmapari,
@@ -1830,18 +1885,18 @@ function fazerLogin(event) {
         return;
     }
 
-    sessionStorage.setItem('e4-logado', usuario);
+    localStorage.setItem('e4-logado', usuario);
     mostrarPainel(usuario);
 }
 
 function fazerLogout() {
-    sessionStorage.removeItem('e4-logado');
+    localStorage.removeItem('e4-logado');
     mostrarTelaLogin();
     document.getElementById('login-form').reset();
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const usuarioSalvo = sessionStorage.getItem('e4-logado');
+    const usuarioSalvo = localStorage.getItem('e4-logado');
     if (usuarioSalvo) {
         mostrarPainel(usuarioSalvo);
     } else {
@@ -2381,21 +2436,10 @@ function baixarPDFPesquisa() {
     janela.document.close();
 }
 
-/* ---- Sidebar mobile ---- */
-function abrirSidebar(){
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebarOverlay').classList.add('open');
-}
-function fecharSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
-}
-
 /* ---- Navigation ---- */
 function goto(page){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.toggle('active', i.dataset.page===page));
   document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+page));
-  fecharSidebar();
   setTimeout(()=>{
     if(page==='dashboard' && mapDash) mapDash.invalidateSize();
     if(page==='mapa' && mapAtuacao) mapAtuacao.invalidateSize();
@@ -2540,11 +2584,12 @@ const gridColor = 'rgba(255,255,255,0.06)';
 let barChart, doughnutChart;
 
 function renderizarGraficosDinamicos() {
-    const agrupadoLider = listaCompletaBD.reduce((acc, curr) => {
-        const lider = curr.lider || "Sem Líder";
-        acc[lider] = (acc[lider] || 0) + 1;
-        return acc;
-    }, {});
+    // Usa a mesma base de líderes da página "Usuários" (inclui também líderes
+    // já cadastrados no sistema que ainda não têm nenhum cadastro registrado),
+    // ordenado do maior para o menor.
+    const listaLideresOrdenada = agruparLideres('todos');
+    const labelsLider = listaLideresOrdenada.map(u => u.name);
+    const valoresLider = listaLideresOrdenada.map(u => u.count);
 
     const agrupadoEscola = listaCompletaBD.reduce((acc, curr) => {
         const escola = curr.escola || "Sem Escola";
@@ -2558,29 +2603,37 @@ function renderizarGraficosDinamicos() {
     const ctxBar = document.getElementById('barChart');
     if (!ctxBar) return;
 
-    const qtdLideres = Object.keys(agrupadoLider).length;
-    ctxBar.style.height = Math.max(220, qtdLideres * 28) + 'px';
+    const qtdLideres = labelsLider.length;
+    // Altura real definida no container INTERNO (não no canvas nem no wrapper com
+    // max-height), pra o Chart.js respeitar o espaço entre as barras e o wrapper
+    // de fora conseguir rolar quando passar do limite visível.
+    const alturaGrafico = Math.max(260, qtdLideres * 34);
+    const innerBar = document.getElementById('bar-chart-inner');
+    if (innerBar) innerBar.style.height = alturaGrafico + 'px';
 
     barChart = new Chart(ctxBar.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: Object.keys(agrupadoLider),
+            labels: labelsLider,
             datasets: [{ 
                 label: 'Cadastros por Líder', 
-                data: Object.values(agrupadoLider), 
+                data: valoresLider, 
                 backgroundColor: '#3B82F6', 
                 borderRadius: 6,
-                barThickness: 16
+                barThickness: 18,
+                categoryPercentage: 0.8,
+                barPercentage: 0.8
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             indexAxis: 'y',
+            layout: { padding: { top: 4, bottom: 4 } },
             plugins: { legend: { display: false } },
             scales: {
-                x: { min: 0, max: 50, grid: { color: gridColor }, ticks: { color: '#8593AC', beginAtZero: true, stepSize: 5, maxRotation: 0, minRotation: 0, autoSkip: false } },
-                y: { grid: { display: false }, ticks: { color: '#8593AC', font: { weight: 'bold', size: 11 } } }
+                x: { min: 0, grid: { color: gridColor }, ticks: { color: '#8593AC', beginAtZero: true, maxRotation: 0, minRotation: 0, autoSkip: false } },
+                y: { grid: { display: false }, ticks: { color: '#8593AC', font: { weight: 'bold', size: 11 }, autoSkip: false } }
             }
         }
     });
@@ -2624,7 +2677,7 @@ function renderizarGraficosDinamicos() {
 
     const elTotalLideres = document.getElementById('total-lideres');
     if (elTotalLideres) {
-        elTotalLideres.textContent = Object.keys(agrupadoLider).length;
+        elTotalLideres.textContent = labelsLider.length;
     }
 }
 
@@ -2853,6 +2906,38 @@ async function editarLider(nomeAtual, event) {
     renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
 }
 
+/* ---- Editar login (telefone) de um líder oficial (atualiza a tabela 'lideres') ---- */
+async function editarLoginLider(nomeAtual, event) {
+    if (event) event.stopPropagation();
+
+    const liderOficial = listaLideresBD.find(l => normalizarTexto(l.nome) === normalizarTexto(nomeAtual));
+    if (!liderOficial) {
+        alert('Esse líder ainda não tem login. Use "Tornar Líder" primeiro.');
+        return;
+    }
+
+    const telefoneDigitado = prompt(`Novo telefone/login de "${nomeAtual}" (com DDD):`, liderOficial.telefone || '');
+    if (telefoneDigitado === null) return; // cancelou
+
+    const digitos = telefoneDigitado.replace(/\D/g, '');
+    if (digitos.length < 10 || digitos.length > 11) {
+        alert("Telefone inválido. Digite com DDD, ex: 96991664671");
+        return;
+    }
+    if (digitos === liderOficial.telefone) return;
+
+    const { error } = await supabaseClient.from('lideres').update({ telefone: digitos }).eq('id', liderOficial.id);
+    if (error) {
+        alert("Erro ao atualizar login: " + (error.message.includes('duplicate') || error.message.includes('unique')
+            ? 'Esse telefone já está sendo usado por outro líder.'
+            : error.message));
+        return;
+    }
+
+    await baixarLideresDaNuvem();
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+}
+
 /* ---- Excluir um líder por completo (remove o login oficial e desvincula os cadastros dele) ---- */
 async function excluirLider(nome, event) {
     if (event) event.stopPropagation();
@@ -2884,6 +2969,7 @@ async function excluirLider(nome, event) {
 /* ---- Cadastrar novo líder direto (sem precisar ter cadastros ainda) ---- */
 function abrirModalCadastrarLider() {
     document.getElementById('form-cadastrar-lider').reset();
+    document.getElementById('novo-lider-regiao').value = '';
     const erro = document.getElementById('cadastrar-lider-erro');
     erro.style.display = 'none';
     erro.textContent = '';
@@ -2910,9 +2996,16 @@ document.getElementById('form-cadastrar-lider').addEventListener('submit', async
 
     const nome = document.getElementById('novo-lider-nome').value.trim();
     const digitos = document.getElementById('novo-lider-telefone').value.replace(/\D/g, '');
+    const regiao = document.getElementById('novo-lider-regiao').value;
 
     if (digitos.length < 10 || digitos.length > 11) {
         erro.textContent = 'Telefone inválido. Digite com DDD, ex: (96) 99166-4671';
+        erro.style.display = 'block';
+        return;
+    }
+
+    if (!regiao) {
+        erro.textContent = 'Selecione a região do líder.';
         erro.style.display = 'block';
         return;
     }
@@ -2922,7 +3015,7 @@ document.getElementById('form-cadastrar-lider').addEventListener('submit', async
     btn.disabled = true;
 
     const { error } = await supabaseClient.from('lideres').upsert(
-        { nome: nome, telefone: digitos },
+        { nome: nome, telefone: digitos, regiao: regiao },
         { onConflict: 'telefone' }
     );
 
@@ -2942,7 +3035,48 @@ document.getElementById('form-cadastrar-lider').addEventListener('submit', async
     renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
 });
 
-function agruparLideres() {
+let regiaoAtivaUsuarios = 'todos';
+
+// Extrai o "grupo" do líder: o que vem depois da última "/" no nome
+// ex: "CLAUDIVINO RIBEIRO PEREIRA / Viana" -> "Viana"
+function extrairGrupoLider(nomeCompleto) {
+    const partes = String(nomeCompleto || '').split('/');
+    return partes.length > 1 ? partes[partes.length - 1].trim() : '';
+}
+
+// Mapeamento de grupo (o que vem após a "/") -> aba de região.
+// Por padrão todo líder cai em 'sul'; apenas os grupos listados aqui saem dessa regra.
+// Adicione aqui novos grupos conforme forem definidos para LARANJAL e VITÓRIA.
+const REGIAO_POR_GRUPO = {
+    'auciney': 'norte'
+};
+
+// Classifica um líder em 'sul', 'norte', 'laranjal' ou 'vitoria'.
+// Prioridade: região escolhida no cadastro do líder (campo "regiao" salvo no Supabase).
+// Sem essa informação, cai na regra antiga: Auciney -> norte; o restante -> sul.
+function classificarRegiaoLider(nomeCompleto) {
+    const liderOficial = listaLideresBD.find(l => normalizarTexto(l.nome) === normalizarTexto(nomeCompleto));
+    if (liderOficial && liderOficial.regiao) {
+        return liderOficial.regiao;
+    }
+    const grupo = normalizarTexto(extrairGrupoLider(nomeCompleto));
+    return REGIAO_POR_GRUPO[grupo] || 'sul';
+}
+
+function filtrarRegiaoUsuarios(regiao) {
+    regiaoAtivaUsuarios = regiao;
+    document.querySelectorAll('.regiao-usuario-btn').forEach(btn => {
+        const ativo = btn.getAttribute('data-regiao') === regiao;
+        btn.style.background = ativo ? 'var(--blue)' : 'var(--card-2)';
+        btn.style.color = ativo ? '#fff' : 'var(--ink)';
+        btn.style.borderColor = ativo ? 'var(--blue)' : 'var(--border)';
+        btn.style.fontWeight = ativo ? '600' : '400';
+    });
+    renderUsers(document.getElementById('userSearch') ? document.getElementById('userSearch').value : '');
+}
+
+function agruparLideres(regiao) {
+    const filtroRegiao = regiao || 'todos';
     const agrupado = listaCompletaBD.reduce((acc, curr) => {
         const nomeLider = curr.lider ? String(curr.lider).trim() : null;
         if (!nomeLider) return acc;
@@ -2962,7 +3096,12 @@ function agruparLideres() {
         }
     });
 
-    return Object.values(agrupado).sort((a, b) => b.count - a.count);
+    let lista = Object.values(agrupado);
+    if (filtroRegiao !== 'todos') {
+        lista = lista.filter(u => classificarRegiaoLider(u.name) === filtroRegiao);
+    }
+
+    return lista.sort((a, b) => b.count - a.count);
 }
 
 function renderUsers(filtro) {
@@ -2970,7 +3109,7 @@ function renderUsers(filtro) {
   if (!wrap) return;
 
   const termo = (filtro || '').trim().toLowerCase();
-  let lideres = agruparLideres();
+  let lideres = agruparLideres(regiaoAtivaUsuarios);
   if (termo !== '') {
     lideres = lideres.filter(u => u.name.toLowerCase().includes(termo));
   }
@@ -2999,6 +3138,7 @@ function renderUsers(filtro) {
         ${statusHtml}
         <div class="user-row-actions">
           <button class="icon-btn-edit" onclick="editarLider('${nomeSeguro}', event)" title="Editar nome do líder">✏️</button>
+          ${ehLiderOficial(u.name) ? `<button class="icon-btn-edit" onclick="editarLoginLider('${nomeSeguro}', event)" title="Editar login (telefone) do líder">🔑</button>` : ''}
           <button class="icon-btn-delete" onclick="excluirLider('${nomeSeguro}', event)" title="Excluir líder">🗑️</button>
         </div>
       </div>
