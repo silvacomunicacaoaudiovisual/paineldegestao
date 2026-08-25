@@ -1918,6 +1918,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// Atualiza os dados automaticamente ao voltar para a aba (sem precisar dar F5)
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && supabaseClient) {
+        baixarDadosDaNuvem();
+    }
+});
+
+// Atualiza os dados periodicamente (a cada 30s) enquanto a aba estiver aberta
+setInterval(() => {
+    if (supabaseClient && document.visibilityState === "visible") {
+        baixarDadosDaNuvem();
+    }
+}, 30000);
+
 /* ---- Meta de cadastros (persistida na tabela 'configuracoes' do Supabase) ---- */
 async function carregarMeta() {
     if (!supabaseClient) return;
@@ -2020,10 +2034,41 @@ function abrirModalPendentes() {
     document.getElementById("modal-pendentes").style.display = "flex";
 }
 
+// Busca TODOS os registros da tabela, paginando de 1000 em 1000
+// (o Supabase/PostgREST limita cada consulta a 1000 linhas por padrão).
+async function buscarTodosRegistros(nomeTabela) {
+    const TAMANHO_PAGINA = 1000;
+    let todos = [];
+    let pagina = 0;
+
+    while (true) {
+        const inicio = pagina * TAMANHO_PAGINA;
+        const fim = inicio + TAMANHO_PAGINA - 1;
+        const { data, error } = await supabaseClient
+            .from(nomeTabela)
+            .select('*')
+            .range(inicio, fim);
+
+        if (error) {
+            console.error(`Erro ao carregar '${nomeTabela}':`, error.message);
+            if (typeof mostrarToast === "function") {
+                mostrarToast(`Erro ao carregar ${nomeTabela}: ` + error.message, "error");
+            }
+            break;
+        }
+
+        todos = todos.concat(data || []);
+
+        if (!data || data.length < TAMANHO_PAGINA) break; // última página
+        pagina++;
+    }
+
+    return todos;
+}
+
 async function baixarDadosDaNuvem() {
     if (!supabaseClient) return;
-    const { data } = await supabaseClient.from('cadastros_votos').select('*');
-    listaCompletaBD = data || [];
+    listaCompletaBD = await buscarTodosRegistros('cadastros_votos');
     await baixarLideresDaNuvem();
     
     const elementoMeta = document.getElementById("valor-meta");
@@ -2826,13 +2871,7 @@ let listaLideresBD = [];
 
 async function baixarLideresDaNuvem() {
     if (!supabaseClient) return;
-    const { data, error } = await supabaseClient.from('lideres').select('*');
-    if (error) {
-        console.error("Erro ao carregar líderes (a tabela 'lideres' existe no Supabase?):", error.message);
-        listaLideresBD = [];
-        return;
-    }
-    listaLideresBD = data || [];
+    listaLideresBD = await buscarTodosRegistros('lideres');
 }
 
 function normalizarTexto(str) {
