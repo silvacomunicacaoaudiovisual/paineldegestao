@@ -1250,7 +1250,6 @@ const santana = {
     ],
     "N. BRASÍLIA": [
         { nome: "CENTRO DE ATENDIMENTO A JUVENTUDE", votos: 0 },
-        { nome: "CENTRO DE ENSINO MADRE TEREZA", votos: 0 },
         { nome: "E.E. JOANIRA AMORA DEL", votos: 2918 },
         { nome: "E.P.G. JOSÉ RIBAMAR PESTAN", votos: 3752 }
     ],
@@ -2407,14 +2406,51 @@ async function deletarRegistro(id) {
     }
 }
 
+function converterDataParaBR(dataStr) {
+    if (!dataStr) return "";
+    dataStr = dataStr.trim();
+    // Formato ISO (AAAA-MM-DD) -> converte para exibição DD/MM/AAAA
+    const partes = dataStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (partes) {
+        return `${partes[3]}/${partes[2]}/${partes[1]}`;
+    }
+    // Já está em outro formato (ex: já é DD/MM/AAAA) — mantém como está
+    return dataStr;
+}
+
+function converterDataParaISO(dataStr) {
+    if (!dataStr) return null;
+    dataStr = dataStr.trim();
+    // Já está em formato ISO (AAAA-MM-DD)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) return dataStr;
+    // Formato brasileiro DD/MM/AAAA
+    const partes = dataStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (partes) {
+        const dia = partes[1].padStart(2, "0");
+        const mes = partes[2].padStart(2, "0");
+        const ano = partes[3];
+        return `${ano}-${mes}-${dia}`;
+    }
+    // Formato não reconhecido: retorna null para não quebrar o salvamento
+    return null;
+}
+
 async function salvarEdicao() {
     const id = document.getElementById("edit-id").value;
-    
+
+    const dataNascimentoRaw = document.getElementById("edit-nascimento").value;
+    const dataNascimentoISO = converterDataParaISO(dataNascimentoRaw);
+
+    if (dataNascimentoRaw && !dataNascimentoISO) {
+        alert("Data de nascimento inválida. Use o formato DD/MM/AAAA (ex: 30/04/2005).");
+        return;
+    }
+
     const novosDados = {
         nome: document.getElementById("edit-nome").value,
         lider: document.getElementById("edit-lider").value,
         nome_mae: document.getElementById("edit-nomedamae").value,
-        data_nascimento: document.getElementById("edit-nascimento").value,
+        data_nascimento: dataNascimentoISO,
         whatsapp: document.getElementById("edit-telefone").value,
         escola: document.getElementById("edit-escola").value,
         municipio: document.getElementById("edit-municipio").value    };
@@ -2441,7 +2477,7 @@ function abrirModalEdicao(id) {
     document.getElementById("edit-nome").value = pessoa.nome || "";
     document.getElementById("edit-lider").value = pessoa.lider || "";
     document.getElementById("edit-nomedamae").value = pessoa.nome_mae || pessoa.mae || "";
-    document.getElementById("edit-nascimento").value = pessoa.data_nascimento || pessoa.nascimento || ""; 
+    document.getElementById("edit-nascimento").value = converterDataParaBR(pessoa.data_nascimento || pessoa.nascimento || ""); 
     document.getElementById("edit-telefone").value = pessoa.whatsapp || "";
     document.getElementById("edit-escola").value = pessoa.escola || "";
     document.getElementById("edit-municipio").value = pessoa.municipio || "";
@@ -3297,16 +3333,6 @@ async function salvarMeta() {
 }
 </script><div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px; pointer-events:none;"></div>
 
-    <!-- O Conteúdo do Menu (Abre ao clicar) -->
-    <div id="painel-menu-ai" style="display: none; position: absolute; bottom: 75px; right: 0; width: 260px; background: #1e222d; border: 1px solid #2a2f3d; border-radius: 12px; padding: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: #fff; font-family: sans-serif;">
-        <h4 style="margin: 0 0 10px 0; font-size: 14px; border-bottom: 1px solid #2a2f3d; padding-bottom: 8px;">Menu AI - Operação</h4>
-        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px;">
-            <li style="cursor: pointer; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,0.05);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">📊 Resumo dos Indicadores</li>
-            <li style="cursor: pointer; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,0.05);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">📍 Otimizar Rotas do Mapa</li>
-            <li style="cursor: pointer; padding: 6px 8px; border-radius: 6px; background: rgba(255,255,255,0.05);" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">💬 Abrir Suporte / Chat</li>
-        </ul>
-    </div>
-</div>
 
 <script>
         function toggleSidebarMobile(force) {
