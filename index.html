@@ -514,6 +514,10 @@
             </h2>
             <p class="page-sub">Navegue por bairros, escolas e gerencie os registros do Supabase em tempo real.</p>
           </div>
+          <button onclick="exportarTodosDadosPDF()" class="btn-primary" style="background: var(--green); display:flex; align-items:center; gap:6px; white-space:nowrap;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Baixar Todos os Dados (Todos os Municípios)
+          </button>
         </div>
 
         <!-- Adicione este bloco logo acima da barra de pesquisa -->
@@ -2487,6 +2491,73 @@ function abrirModalEdicao(id) {
 function abrirConsultaTSE(nome) {
     window.open("https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/", '_blank');
 }
+
+function exportarTodosDadosPDF() {
+    if (typeof listaCompletaBD === 'undefined' || listaCompletaBD.length === 0) {
+        alert("Atenção: Nenhum dado carregado ainda.");
+        return;
+    }
+
+    const escaparHTML = (valor) => {
+        const texto = (valor === null || valor === undefined) ? "" : String(valor);
+        return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    };
+
+    // Agrupa por município e depois por escola
+    const porMunicipio = {};
+    listaCompletaBD.forEach(item => {
+        const municipio = item.municipio || "Macapá";
+        const escola = item.escola || "Sem Escola";
+        if (!porMunicipio[municipio]) porMunicipio[municipio] = {};
+        if (!porMunicipio[municipio][escola]) porMunicipio[municipio][escola] = [];
+        porMunicipio[municipio][escola].push(item);
+    });
+
+    const municipiosOrdenados = Object.keys(porMunicipio).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+
+    let htmlContent = `<html><head><title>Relatório Geral - Todos os Municípios</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
+        p.subtitulo { text-align: center; margin-top: 0; margin-bottom: 24px; color: #555; }
+        h2.municipio { font-size: 16px; background: #1e3a5f; color: #fff; padding: 6px 10px; margin-top: 28px; margin-bottom: 8px; page-break-before: auto; }
+        h3.escola { font-size: 13px; margin: 12px 0 4px; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10px; }
+        th, td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
+        th { background: #eee; }
+        .total-municipio { font-size: 11px; color: #555; margin-bottom: 6px; }
+        @media print { h2.municipio { break-inside: avoid; } table { break-inside: avoid; } }
+    </style>
+    </head><body onload="window.print();">
+    <h1>Relatório Geral de Cadastros</h1>
+    <p class="subtitulo">Todos os Municípios · Total geral: ${listaCompletaBD.length} cadastros · Gerado em ${new Date().toLocaleDateString('pt-BR')}</p>`;
+
+    municipiosOrdenados.forEach(municipio => {
+        const escolas = porMunicipio[municipio];
+        const totalMunicipio = Object.values(escolas).reduce((soma, arr) => soma + arr.length, 0);
+        htmlContent += `<h2 class="municipio">${escaparHTML(municipio)}</h2>
+        <div class="total-municipio">Total no município: ${totalMunicipio} cadastros</div>`;
+
+        const escolasOrdenadas = Object.keys(escolas).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        escolasOrdenadas.forEach(escola => {
+            const pessoas = escolas[escola];
+            htmlContent += `<h3 class="escola">Escola: ${escaparHTML(escola)} (${pessoas.length})</h3>
+            <table><thead><tr><th>Líder</th><th>Nome</th><th>Nome da Mãe</th><th>Data Nasc.</th><th>WhatsApp</th></tr></thead><tbody>`;
+            pessoas.forEach(p => {
+                const dataNasc = p.data_nascimento || p.nascimento || '';
+                htmlContent += `<tr><td>${escaparHTML(p.lider)}</td><td>${escaparHTML(p.nome)}</td><td>${escaparHTML(p.nome_mae)}</td><td>${escaparHTML(dataNasc)}</td><td>${escaparHTML(p.whatsapp)}</td></tr>`;
+            });
+            htmlContent += `</tbody></table>`;
+        });
+    });
+
+    htmlContent += `</body></html>`;
+
+    const janelaImpressao = window.open('', '_blank');
+    janelaImpressao.document.write(htmlContent);
+    janelaImpressao.document.close();
+}
+
 
 function exportarBairroPDF() {
     const bairro = bairroAtivo;
