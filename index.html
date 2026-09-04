@@ -40,6 +40,17 @@
     --ink:#1B2436;
     --muted:#66708A;
   }
+  .item-menu-exportar{
+    display:block; width:100%; text-align:left; background:transparent; color:var(--ink);
+    border:none; border-bottom:1px solid var(--border); padding:10px 14px; font-size:13px;
+    font-family:'Inter',sans-serif; cursor:pointer; white-space:nowrap;
+  }
+  .item-menu-exportar:last-child{border-bottom:none;}
+  .item-menu-exportar:hover{background:var(--card-2); color:#fff;}
+  .contador-regiao{
+    background:rgba(255,255,255,0.18); color:inherit; font-size:10.5px; font-weight:700;
+    padding:1px 7px; border-radius:10px; line-height:1.6; min-width:16px; text-align:center;
+  }
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);}
   .shell{display:flex;min-height:100vh;}
@@ -367,11 +378,14 @@
       </div>
     </div>
     <div class="sb-footer">
-      <div class="sb-user">
-        <div class="sb-avatar" id="sb-avatar">?</div>
-        <div style="min-width:0;">
-          <div class="sb-user-name" id="sb-user-nome">—</div>
+      <div class="sb-user" style="justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+          <div class="sb-avatar" id="sb-avatar">?</div>
+          <div style="min-width:0;">
+            <div class="sb-user-name" id="sb-user-nome">—</div>
+          </div>
         </div>
+        <button onclick="exportarLideresPoucosCadastros()" title="Relatório: líderes com 0 ou 1 cadastro" style="flex-shrink:0; display:flex; align-items:center; justify-content:center; width:22px; height:22px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); color:var(--amber); border-radius:6px; cursor:pointer; font-size:11px; padding:0;">📋</button>
       </div>
       <button id="theme-toggle-btn" onclick="alternarTema()" title="Alternar tema claro/escuro" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:var(--sidebar-hover);border:1px solid rgba(255,255,255,0.1);color:var(--sidebar-text);padding:9px 12px;border-radius:8px;cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;margin-bottom:8px;">
         <span id="theme-toggle-icon">🌙</span>
@@ -514,10 +528,21 @@
             </h2>
             <p class="page-sub">Navegue por bairros, escolas e gerencie os registros do Supabase em tempo real.</p>
           </div>
-          <button onclick="exportarTodosDadosPDF()" class="btn-primary" style="background: var(--green); display:flex; align-items:center; gap:6px; white-space:nowrap;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Baixar Todos os Dados (Todos os Municípios)
-          </button>
+          <div style="position:relative; display:inline-block;" id="wrap-exportar-todos">
+            <button onclick="toggleMenuExportar(event)" class="btn-primary" style="background: var(--green); display:flex; align-items:center; gap:6px; white-space:nowrap;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar Todos os Dados
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:2px;"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div id="menu-exportar-todos" style="display:none; position:absolute; top:calc(100% + 6px); right:0; background:var(--card); border:1px solid var(--border); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.4); min-width:190px; z-index:60; overflow:hidden;">
+              <button onclick="exportarDadosPorRegiao('todos')" class="item-menu-exportar">Todos</button>
+              <button onclick="exportarDadosPorRegiao('sul')" class="item-menu-exportar">MCP Sul</button>
+              <button onclick="exportarDadosPorRegiao('norte')" class="item-menu-exportar">MCP Norte</button>
+              <button onclick="exportarDadosPorRegiao('laranjal')" class="item-menu-exportar">Laranjal</button>
+              <button onclick="exportarDadosPorRegiao('vitoria')" class="item-menu-exportar">Vitória</button>
+              <button onclick="exportarDadosPorRegiao('santana')" class="item-menu-exportar">Santana</button>
+            </div>
+          </div>
         </div>
 
         <!-- Adicione este bloco logo acima da barra de pesquisa -->
@@ -630,12 +655,12 @@
           </div>
         </div>
         <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-top:12px;" id="abas-regiao-usuarios">
-          <button onclick="filtrarRegiaoUsuarios('todos')" class="pill regiao-usuario-btn" data-regiao="todos" style="background:var(--blue); color:#fff; border:1px solid var(--blue); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Todos</button>
-          <button onclick="filtrarRegiaoUsuarios('sul')" class="pill regiao-usuario-btn" data-regiao="sul" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">MCP Sul</button>
-          <button onclick="filtrarRegiaoUsuarios('norte')" class="pill regiao-usuario-btn" data-regiao="norte" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">MCP Norte</button>
-          <button onclick="filtrarRegiaoUsuarios('laranjal')" class="pill regiao-usuario-btn" data-regiao="laranjal" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Laranjal</button>
-          <button onclick="filtrarRegiaoUsuarios('vitoria')" class="pill regiao-usuario-btn" data-regiao="vitoria" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Vitória</button>
-          <button onclick="filtrarRegiaoUsuarios('santana')" class="pill regiao-usuario-btn" data-regiao="santana" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase;">Santana</button>
+          <button onclick="filtrarRegiaoUsuarios('todos')" class="pill regiao-usuario-btn" data-regiao="todos" style="background:var(--blue); color:#fff; border:1px solid var(--blue); padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase; display:flex; align-items:center; gap:6px;">Todos <span class="contador-regiao" data-regiao-contador="todos">0</span></button>
+          <button onclick="filtrarRegiaoUsuarios('sul')" class="pill regiao-usuario-btn" data-regiao="sul" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase; display:flex; align-items:center; gap:6px;">MCP Sul <span class="contador-regiao" data-regiao-contador="sul">0</span></button>
+          <button onclick="filtrarRegiaoUsuarios('norte')" class="pill regiao-usuario-btn" data-regiao="norte" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase; display:flex; align-items:center; gap:6px;">MCP Norte <span class="contador-regiao" data-regiao-contador="norte">0</span></button>
+          <button onclick="filtrarRegiaoUsuarios('laranjal')" class="pill regiao-usuario-btn" data-regiao="laranjal" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase; display:flex; align-items:center; gap:6px;">Laranjal <span class="contador-regiao" data-regiao-contador="laranjal">0</span></button>
+          <button onclick="filtrarRegiaoUsuarios('vitoria')" class="pill regiao-usuario-btn" data-regiao="vitoria" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase; display:flex; align-items:center; gap:6px;">Vitória <span class="contador-regiao" data-regiao-contador="vitoria">0</span></button>
+          <button onclick="filtrarRegiaoUsuarios('santana')" class="pill regiao-usuario-btn" data-regiao="santana" style="background:var(--card-2); color:var(--ink); border:1px solid var(--border); padding:6px 14px; border-radius:20px; font-size:12px; cursor:pointer; white-space:nowrap; min-height:38px; box-sizing:border-box; text-transform:uppercase; display:flex; align-items:center; gap:6px;">Santana <span class="contador-regiao" data-regiao-contador="santana">0</span></button>
         </div>
         <div class="card" style="padding:8px 12px;margin-top:14px;"><div id="userList"></div></div>
       </div>
@@ -1264,7 +1289,7 @@ const santana = {
         { nome: "E.E. DENISE VASCONCELOS", votos: 1071 }
     ],
     "VILA AMAZONAS": [
-        { nome: "E. M. IRANILDE DE ARAÚJO FERREIRA", votos: 2441 }
+        { nome: "E.M.E.F. MARIA IRANILDE", votos: 2441 }
     ],
     "FONTE NOVA": [
         { nome: "E.E. JOSÉ DE ANCHIETA", votos: 4391 },
@@ -2492,7 +2517,38 @@ function abrirConsultaTSE(nome) {
     window.open("https://www.tse.jus.br/servicos-eleitorais/autoatendimento-eleitoral#/", '_blank');
 }
 
-function exportarTodosDadosPDF() {
+// Abre/fecha o menu do botão "Baixar Todos os Dados"
+function toggleMenuExportar(event) {
+    if (event) event.stopPropagation();
+    const menu = document.getElementById('menu-exportar-todos');
+    if (!menu) return;
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+function fecharMenuExportar() {
+    const menu = document.getElementById('menu-exportar-todos');
+    if (menu) menu.style.display = 'none';
+}
+
+// Fecha o menu ao clicar fora dele
+document.addEventListener('click', function (event) {
+    const wrap = document.getElementById('wrap-exportar-todos');
+    if (wrap && !wrap.contains(event.target)) fecharMenuExportar();
+});
+
+const ROTULOS_REGIAO_EXPORTAR = {
+    todos: 'Todos os Municípios',
+    sul: 'MCP Sul',
+    norte: 'MCP Norte',
+    laranjal: 'Laranjal',
+    vitoria: 'Vitória',
+    santana: 'Santana'
+};
+
+// Gera o relatório em PDF filtrado por região (todos, sul, norte, laranjal, vitoria, santana)
+function exportarDadosPorRegiao(regiao) {
+    fecharMenuExportar();
+
     if (typeof listaCompletaBD === 'undefined' || listaCompletaBD.length === 0) {
         alert("Atenção: Nenhum dado carregado ainda.");
         return;
@@ -2503,9 +2559,21 @@ function exportarTodosDadosPDF() {
         return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     };
 
+    const rotuloRegiao = ROTULOS_REGIAO_EXPORTAR[regiao] || 'Todos os Municípios';
+
+    // Filtra pela região do líder responsável pelo cadastro (exceto quando "todos")
+    const dadosFiltrados = (regiao === 'todos')
+        ? listaCompletaBD
+        : listaCompletaBD.filter(item => classificarRegiaoLider(item.lider) === regiao);
+
+    if (dadosFiltrados.length === 0) {
+        alert("Nenhum cadastro encontrado para: " + rotuloRegiao);
+        return;
+    }
+
     // Agrupa por município e depois por escola
     const porMunicipio = {};
-    listaCompletaBD.forEach(item => {
+    dadosFiltrados.forEach(item => {
         const municipio = item.municipio || "Macapá";
         const escola = item.escola || "Sem Escola";
         if (!porMunicipio[municipio]) porMunicipio[municipio] = {};
@@ -2515,7 +2583,7 @@ function exportarTodosDadosPDF() {
 
     const municipiosOrdenados = Object.keys(porMunicipio).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-    let htmlContent = `<html><head><title>Relatório Geral - Todos os Municípios</title>
+    let htmlContent = `<html><head><title>Relatório Geral - ${escaparHTML(rotuloRegiao)}</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
@@ -2526,11 +2594,13 @@ function exportarTodosDadosPDF() {
         th, td { border: 1px solid #999; padding: 4px 6px; text-align: left; }
         th { background: #eee; }
         .total-municipio { font-size: 11px; color: #555; margin-bottom: 6px; }
-        @media print { h2.municipio { break-inside: avoid; } table { break-inside: avoid; } }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; }
+        @media print { h2.municipio { break-inside: avoid; } h3.escola { break-after: avoid; } }
     </style>
     </head><body onload="window.print();">
     <h1>Relatório Geral de Cadastros</h1>
-    <p class="subtitulo">Todos os Municípios · Total geral: ${listaCompletaBD.length} cadastros · Gerado em ${new Date().toLocaleDateString('pt-BR')}</p>`;
+    <p class="subtitulo">${escaparHTML(rotuloRegiao)} · Total geral: ${dadosFiltrados.length} cadastros · Gerado em ${new Date().toLocaleDateString('pt-BR')}</p>`;
 
     municipiosOrdenados.forEach(municipio => {
         const escolas = porMunicipio[municipio];
@@ -2549,6 +2619,98 @@ function exportarTodosDadosPDF() {
             });
             htmlContent += `</tbody></table>`;
         });
+    });
+
+    htmlContent += `</body></html>`;
+
+    const janelaImpressao = window.open('', '_blank');
+    janelaImpressao.document.write(htmlContent);
+    janelaImpressao.document.close();
+}
+
+// Mantido por compatibilidade, caso algo ainda chame a função antiga.
+function exportarTodosDadosPDF() {
+    exportarDadosPorRegiao('todos');
+}
+
+// Gera relatório (impressão/PDF) dos líderes que não cadastraram ninguém ou cadastraram apenas 1 pessoa
+function exportarLideresPoucosCadastros() {
+    if (typeof agruparLideres !== 'function') {
+        alert("Atenção: dados de líderes ainda não carregados.");
+        return;
+    }
+
+    const escaparHTML = (valor) => {
+        const texto = (valor === null || valor === undefined) ? "" : String(valor);
+        return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    };
+
+    const buscarTelefoneLider = (nome) => {
+        const oficial = listaLideresBD.find(l => normalizarTexto(l.nome) === normalizarTexto(nome));
+        return oficial && oficial.telefone ? oficial.telefone : '';
+    };
+
+    const REGIOES_ORDEM = ['sul', 'norte', 'laranjal', 'vitoria', 'santana'];
+    const ROTULOS_REGIAO = { sul: 'MCP Sul', norte: 'MCP Norte', laranjal: 'Laranjal', vitoria: 'Vitória', santana: 'Santana' };
+
+    const todosLideres = agruparLideres('todos');
+    const semCadastroTotal = todosLideres.filter(l => l.count === 0);
+    const umCadastroTotal = todosLideres.filter(l => l.count === 1);
+
+    if (semCadastroTotal.length === 0 && umCadastroTotal.length === 0) {
+        alert("Nenhum líder com 0 ou 1 cadastro encontrado. Todos os líderes têm 2 ou mais cadastros.");
+        return;
+    }
+
+    let htmlContent = `<html><head><title>Relatório - Líderes com Poucos Cadastros</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { text-align: center; font-size: 20px; margin-bottom: 4px; }
+        p.subtitulo { text-align: center; margin-top: 0; margin-bottom: 24px; color: #555; }
+        h2.regiao { font-size: 17px; background: #0a3d62; color: #fff; padding: 8px 12px; margin-top: 34px; margin-bottom: 10px; }
+        h3.secao { font-size: 13.5px; margin: 14px 0 4px; padding: 4px 8px; border-left: 4px solid #b91c1c; }
+        h3.secao.um { border-left-color: #d97706; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 11px; }
+        th, td { border: 1px solid #999; padding: 5px 8px; text-align: left; }
+        th { background: #eee; }
+        .vazio { color: #777; font-style: italic; font-size: 12px; margin: 4px 0 16px; }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; }
+        @media print { h2.regiao { break-inside: avoid; } h3.secao { break-after: avoid; } }
+    </style>
+    </head><body onload="window.print();">
+    <h1>Relatório: Líderes com 0 ou 1 Cadastro</h1>
+    <p class="subtitulo">Total geral de líderes: ${todosLideres.length} · Sem cadastro: ${semCadastroTotal.length} · Com 1 cadastro: ${umCadastroTotal.length} · Gerado em ${new Date().toLocaleDateString('pt-BR')}</p>`;
+
+    REGIOES_ORDEM.forEach(regiao => {
+        const semCadastro = semCadastroTotal.filter(l => classificarRegiaoLider(l.name) === regiao).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+        const umCadastro = umCadastroTotal.filter(l => classificarRegiaoLider(l.name) === regiao).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+
+        htmlContent += `<h2 class="regiao">${escaparHTML(ROTULOS_REGIAO[regiao])} — ${semCadastro.length + umCadastro.length} líder(es)</h2>`;
+
+        htmlContent += `<h3 class="secao">Sem nenhum cadastro (${semCadastro.length})</h3>`;
+        if (semCadastro.length > 0) {
+            htmlContent += `<table><thead><tr><th>#</th><th>Líder</th><th>Telefone</th></tr></thead><tbody>`;
+            semCadastro.forEach((l, i) => {
+                const tel = buscarTelefoneLider(l.name);
+                htmlContent += `<tr><td>${i + 1}</td><td>${escaparHTML(l.name)}</td><td>${escaparHTML(tel || '—')}</td></tr>`;
+            });
+            htmlContent += `</tbody></table>`;
+        } else {
+            htmlContent += `<p class="vazio">Nenhum líder nesta situação.</p>`;
+        }
+
+        htmlContent += `<h3 class="secao um">Com apenas 1 cadastro (${umCadastro.length})</h3>`;
+        if (umCadastro.length > 0) {
+            htmlContent += `<table><thead><tr><th>#</th><th>Líder</th><th>Telefone</th><th>Bairro(s)</th></tr></thead><tbody>`;
+            umCadastro.forEach((l, i) => {
+                const tel = buscarTelefoneLider(l.name);
+                htmlContent += `<tr><td>${i + 1}</td><td>${escaparHTML(l.name)}</td><td>${escaparHTML(tel || '—')}</td><td>${escaparHTML([...l.bairros].join(', '))}</td></tr>`;
+            });
+            htmlContent += `</tbody></table>`;
+        } else {
+            htmlContent += `<p class="vazio">Nenhum líder nesta situação.</p>`;
+        }
     });
 
     htmlContent += `</body></html>`;
@@ -3300,6 +3462,17 @@ function agruparLideres(regiao) {
     return lista.sort((a, b) => b.count - a.count);
 }
 
+// Calcula a somatória de cadastros de cada região e atualiza os badges das abas
+function atualizarContadoresRegiao() {
+    const regioes = ['todos', 'sul', 'norte', 'laranjal', 'vitoria', 'santana'];
+    regioes.forEach(regiao => {
+        const soma = agruparLideres(regiao).reduce((total, u) => total + u.count, 0);
+        document.querySelectorAll('.contador-regiao[data-regiao-contador="' + regiao + '"]').forEach(span => {
+            span.textContent = soma;
+        });
+    });
+}
+
 function renderUsers(filtro) {
   const wrap = document.getElementById('userList');
   if (!wrap) return;
@@ -3314,6 +3487,8 @@ function renderUsers(filtro) {
   if (elCount) {
     elCount.textContent = lideres.length + (lideres.length === 1 ? ' líder cadastrado' : ' líderes cadastrados');
   }
+
+  atualizarContadoresRegiao();
 
   wrap.innerHTML = lideres.map(u => {
     const nomeSeguro = u.name.replace(/'/g, "\\'");
